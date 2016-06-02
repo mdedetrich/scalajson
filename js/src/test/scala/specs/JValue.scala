@@ -13,6 +13,7 @@ object JValue extends TestSuite with UTestScalaCheck {
   val tests = TestSuite {
     "The JString value should" - {
       "equals" - testEquals
+      "have a bijection with js.Any" - testBijection
     }
   }
 
@@ -29,4 +30,10 @@ object JValue extends TestSuite with UTestScalaCheck {
       }
       jValue == cloned
     }.checkUTest()
+
+  def testBijection = {
+    forAll { jValue: scala.json.ast.JValue =>
+      scala.json.ast.JValue.fromJsAny(jValue.toJsAny) == jValue
+    }.checkUTest()
+  }
 }

@@ -31,6 +31,32 @@ sealed abstract class JValue extends Product with Serializable {
   def toJsAny: js.Any
 }
 
+object JValue {
+  /**
+    * Converts a Javascript object/value coming from Javascript to a [[JValue]].
+    *
+    * @return
+    */
+  def fromJsAny(json: js.Any): JValue =
+    json match {
+      case v if v == null => JNull
+      case v if v.isInstanceOf[Boolean] =>
+        if (v.asInstanceOf[Boolean]) JTrue else JFalse
+
+      case v if (v: Any).isInstanceOf[String] =>
+        JString(v.asInstanceOf[String])
+
+      case v: js.Array[js.Any @unchecked] =>
+        JArray(v.map(fromJsAny).toVector)
+
+      case v if js.typeOf(v) == "object" =>
+        JObject(v.asInstanceOf[js.Dictionary[js.Any]].mapValues(fromJsAny).toMap)
+
+      case v if js.typeOf(v) == "number" =>
+        JNumber(v.toString)
+    }
+}
+
 /** Represents a JSON null value
   *
   * @author Matthew de Detrich
