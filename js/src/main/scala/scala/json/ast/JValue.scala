@@ -31,12 +31,14 @@ sealed abstract class JValue extends Product with Serializable {
   def toJsAny: js.Any
 }
 
+@JSExport
 object JValue {
   /**
     * Converts a Javascript object/value coming from Javascript to a [[JValue]].
     *
     * @return
     */
+  @JSExport
   def fromJsAny(json: js.Any): JValue =
     json match {
       case v if v == null => JNull
