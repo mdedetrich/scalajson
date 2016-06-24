@@ -13,9 +13,8 @@ object JValue extends TestSuite with UTestScalaCheck {
     }
   }
 
-  def testBijection = {
+  def testBijection =
     forAll { jValue: scala.json.ast.unsafe.JValue =>
-      scala.json.ast.unsafe.JValue.fromJsAny(jValue.toJsAny) == jValue
+      scala.json.ast.unsafe.JValue.fromJsAny(jValue.toJsAny) == Some(jValue)
     }.checkUTest()
-  }
 }

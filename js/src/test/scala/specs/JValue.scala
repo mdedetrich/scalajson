@@ -31,9 +31,8 @@ object JValue extends TestSuite with UTestScalaCheck {
       jValue == cloned
     }.checkUTest()
 
-  def testBijection = {
+  def testBijection =
     forAll { jValue: scala.json.ast.JValue =>
-      scala.json.ast.JValue.fromJsAny(jValue.toJsAny) == jValue
+      scala.json.ast.JValue.fromJsAny(jValue.toJsAny) == Some(jValue)
     }.checkUTest()
-  }
 }

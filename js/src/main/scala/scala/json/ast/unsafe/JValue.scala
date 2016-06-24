@@ -35,31 +35,36 @@ sealed abstract class JValue extends Serializable with Product {
   def toJsAny: js.Any
 }
 
-@JSExport
 object JValue {
- /**
-   * Converts a Javascript object/value coming from Javascript to a [[JValue]].
-   *
-   * @return
-   */
-  @JSExport
-  def fromJsAny(json: js.Any): JValue =
-    json match {
-      case null => JNull
-      case v if v.isInstanceOf[Boolean] =>
-        if (v.asInstanceOf[Boolean]) JTrue else JFalse
+  private val undefined = js.undefined
 
-      case v if (v: Any).isInstanceOf[String] =>
-        JString(v.asInstanceOf[String])
+  private def unsafeAny2JValue(input: Any): JValue = input match {
+    case null        => JNull
+    case s: String   => JString(s)
+    case b: Boolean  => JBoolean(b)
+    case d: Double   => JNumber(d.toString)
+    case `undefined` => JNull
 
-      case v: js.Array[js.Any @unchecked] =>
-        JArray(v.map(fromJsAny))
+    case a: js.Array[js.Dynamic @unchecked] =>
+      JArray(a.map(v => unsafeAny2JValue(v)))
 
-      case v if js.typeOf(v) == "object" =>
-        JObject(v.asInstanceOf[js.Dictionary[js.Any]].map { case (k, v) => JField(k, fromJsAny(v)) }.toArray)
+    case o: js.Object =>
+      JObject(o.asInstanceOf[js.Dictionary[js.Dynamic]]
+        .map { case (k, v) => JField(k, unsafeAny2JValue(v)) }.toArray)
 
-      case v if js.typeOf(v) == "number" =>
-        JNumber(v.toString)
+    case _ => throw new IllegalArgumentException()
+  }
+
+  /**
+    * Converts a Javascript object/value coming from Javascript to a [[JValue]].
+    *
+    * @return
+    */
+  def fromJsAny(json: js.Any): Option[JValue] =
+    try {
+      Some(unsafeAny2JValue(json))
+    } catch {
+      case e: IllegalArgumentException => None
     }
 }
 
