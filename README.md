@@ -13,13 +13,13 @@ accepted by the SLIP process.
 
 Built for Scala 2.10.x and 2.11.x
 
-```scala
+```sbt
 "org.mdedetrich" %% "scala-json-ast" % "1.0.0-M1"
 ```
 
 If you are using Scala.js, you need to do
 
-```scala
+```sbt
 "org.mdedetrich" %%% "scala-json-ast" % "1.0.0-M1"
 ```
 
@@ -91,6 +91,8 @@ as stuff like `Char[Array]`). You can provide your own implementations of a `.to
 conversion by creating an `implicit val` that implements a JNumberConverter, i.e.
 
 ```scala
+import scala.json.ast.JNumberConverter
+
 implicit val myNumberConverter = new JNumberConverter[SomeNumberType]{
   def apply(s: String): SomeNumberType = ???
 }
@@ -99,83 +101,51 @@ implicit val myNumberConverter = new JNumberConverter[SomeNumberType]{
 Then you just need to provide this implementation in scope for usage
 
 ## Scala.js
+
 Scala json ast also provides support for [Scala.js](https://github.com/scala-js/scala-js).
-There is even a separate `AST` implementation specifically for `Scala.js` with `@JSExport` for the various `JValue` types,
-which means you are able to construct a `JValue` in `Javascript` in the rare cases that you may need to do so.
-Hence there are added constructors for various `JValue` subtypes, i.e. you can pass in a `Javascript` `array` (i.e. `[]`)
-to construct a `JArray`, as well as a constructor for `JObject` that allows you to pass in a standard `Javascript`
-object with `JValue` as keys (i.e. `{}`).
+The usage of Scala.js mirros the usage of Scala on the JVM however Scala.js also implements
+a `.toJsAny` method which allows you to convert any
+`scala.json.ast.JValue`/`scala.json.ast.unsafe.JValue` to a Javascript value in `Scala.js`.
 
-Examples of constructing various `JValue`'s are given below.
+Constructing `JValue` from native Javascript object can be done using `JValue.fromJsAny`:
 
-```javascript
-var jArray = new scala.json.ast.JArray([new scala.json.ast.JString("test")]);
-
-var jObject = new scala.json.ast.JObject({"someString" : jArray});
-
-var jObjectWithBool = scala.json.ast.JObject({
-    "someString" : jArray,
-    "someBool" : scala.json.ast.JTrue()
-});
-
-var jObjectWithBoolAndNumber = scala.json.ast.JObject({
-    "someString" : jArray,
-    "someBool" : scala.json.ast.JTrue(),
-    "someNumber" : new scala.json.ast.JNumber(324324.324)
-});
-
-var jObjectWithBoolAndNumberAndNull = new scala.json.ast.JObject({
-    "someString" : jArray,
-    "someBool" : scala.json.ast.JTrue(),
-    "someNumber" : new scala.json.ast.JNumber(324324.324),
-    "nullValue": scala.json.ast.JNull()
+```
+var jValue = new scala.json.ast.JValue.fromJsAny({
+  "someString": "string",
+  "someBool"  : true,
+  "someNumber": 324324.324,
+  "nullValue" : null
 });
 ```
 
-Alternatively, `JValue` can be constructed directly from standard `Javascript` object using `JValue.fromJsAny`:
-
-```
-var jValue = new scala.json.ast.jValue({
-    "someString" : "string",
-    "someBool"   : true,
-    "someNumber" : 324324.324,
-    "nullValue"  : null
-});
-```
-
-The `.value`, `.toJsAny` and `.toStandard`/`.toUnsafe` are also exposed in the Javascript environment.
-Note that `.value` may give undefined values if the underlying datastructure doesn't have a Javascript
-equivalent
-
-```javascript
-var jArray = new scala.json.ast.JArray([new scala.json.ast.JString("test")]);
-console.log(jArray.value); // will print gibberish
-```
-
-This is because internally `scala.json.ast.JArray` uses the Scala `Vector` data structure, which has
-no Javascript equivalent. A typical use of `.value` is to get the raw value of a `JNumber`
-incase its too large to fit in a double, i.e.
-
-```javascript
-var toJsAny = new scala.json.ast.unsafe.JNumber("3432523523e29532958").toJsAny;
-var value = new scala.json.ast.unsafe.JNumber("3432523523e29532958").value;
-console.log(toJsAny); // will print null
-console.log(value); // will print "3432523523e29532958"
-```
-
-For more examples of the Javascript interopt for Scala.js, please see the unit tests at
-https://github.com/mdedetrich/scala-json-ast/tree/master/js/src/test/javascript/jsValue.spec.js and
-https://github.com/mdedetrich/scala-json-ast/tree/master/js/src/test/javascript/unsafe.jsValue.spec.js
+Note that, since a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumber` is unlimited
+precision (represented internally as a `String`), calls to `.toJsAny` can lose precision on the
+underlying number (numbers in Javascript are represented as double precision floating point number).
+You can use the `.value` method on a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumber` to
+get the raw string value as a solution to this problem.
 
 ## jNumberRegex
 `scala.json.JNumber` uses `jNumberRegex` to validate whether a number is a valid
 JSON number. One can use `jNumberRegex` explicitly if you want to use the validation that
 is used by `scala.json.JNumber` (for example, you may want to validate proper numbers
-using `scala.json.unsafe.JNumber`).
+before creating a  `scala.json.unsafe.JNumber`).
 
 ```scala
 import scala.json.jNumberRegex
 
 "3535353".matches(jNumberRegex) // true
-
 ```
+
+## Code formatting
+The project is formatted using [scalafmt](https://github.com/olafurpg/scalafmt). Please run `scalafmt`
+in SBT before committing any changes
+
+## Changelog
+
+### 1.0.0-M1
+* First release of draft for scala-json-ast
+### 1.0.0-M2
+* Renamed bigDecimalConverter to jNumberConverter
+* Removed `@JSExport` annotation, it was blowing up the size of Scala.js projects that use scala-json-ast
+* Fixed missing import in some sections of the README, clarified some other sections
+* Added in scalafmt as a code formatter

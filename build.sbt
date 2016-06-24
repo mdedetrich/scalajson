@@ -18,7 +18,7 @@ lazy val root = project.in(file(".")).
 lazy val scalaJsonAST = crossProject.in(file(".")).
   settings(
     name := "scala-json-ast",
-    version := "1.0.0-M1",
+    version := "1.0.0-M2",
     organization := "org.mdedetrich",
     scalacOptions ++= Seq(
       "-encoding", "UTF-8",
@@ -86,14 +86,8 @@ lazy val scalaJsonAST = crossProject.in(file(".")).
       "org.scalacheck" %%% "scalacheck" % scalaCheckVersion % Test,
       "com.lihaoyi" %%% "utest" % "0.4.3" % Test
     ),
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    jsTest <<= (jsTest dependsOn (fullOptJS in Compile)),
-    jsTestResources := {
-      val test = (sourceDirectory in Test).value
-      val targetArtifact = (artifactPath in fullOptJS in Compile).value
-      ((test / "javascript") ** "**.spec.js").get ++ Seq(targetArtifact.getAbsoluteFile)
-    }
+    testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
 lazy val scalaJsonASTJVM = scalaJsonAST.jvm
-lazy val scalaJsonASTJS = scalaJsonAST.js.enablePlugins(SbtJsTestPlugin)
+lazy val scalaJsonASTJS = scalaJsonAST.js

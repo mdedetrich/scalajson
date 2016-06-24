@@ -67,22 +67,20 @@ object JValue {
   *
   * @author Matthew de Detrich
   */
-@JSExport
 case object JNull extends JValue {
-  @JSExport override def toStandard: ast.JValue = ast.JNull
+  override def toStandard: ast.JValue = ast.JNull
 
-  @JSExport override def toJsAny: js.Any = null
+  override def toJsAny: js.Any = null
 }
 
 /** Represents a JSON string value
   *
   * @author Matthew de Detrich
   */
-@JSExport
-case class JString(@(JSExport @field) value: String) extends JValue {
-  @JSExport override def toStandard: ast.JValue = ast.JString(value)
+case class JString(value: String) extends JValue {
+  override def toStandard: ast.JValue = ast.JString(value)
 
-  @JSExport override def toJsAny: js.Any = value
+  override def toJsAny: js.Any = value
 }
 
 object JNumber {
@@ -116,18 +114,17 @@ object JNumber {
   * @author Matthew de Detrich
   */
 // JNumber is internally represented as a string, to improve performance
-@JSExport
 case class JNumber(@(JSExport @field) value: String) extends JValue {
   def to[B](implicit jNumberConverter: JNumberConverter[B]) =
     jNumberConverter(value)
 
   override def toStandard: ast.JValue = ast.JNumber(value)
 
-  @JSExport def this(value: Double) = {
+  def this(value: Double) = {
     this(value.toString)
   }
 
-  @JSExport override def toJsAny: js.Any = value.toDouble match {
+  override def toJsAny: js.Any = value.toDouble match {
     case n if n.isNaN => null
     case n if n.isInfinity => null
     case n => n
@@ -143,7 +140,7 @@ case class JNumber(@(JSExport @field) value: String) extends JValue {
 sealed abstract class JBoolean extends JValue {
   def get: Boolean
 
-  @JSExport override def toJsAny: js.Any = get
+  override def toJsAny: js.Any = get
 }
 
 object JBoolean {
@@ -156,22 +153,20 @@ object JBoolean {
   *
   * @author Matthew de Detrich
   */
-@JSExport
 case object JTrue extends JBoolean {
   override def get = true
 
-  @JSExport override def toStandard: ast.JValue = ast.JTrue
+  override def toStandard: ast.JValue = ast.JTrue
 }
 
 /** Represents a JSON Boolean false value
   *
   * @author Matthew de Detrich
   */
-@JSExport
 case object JFalse extends JBoolean {
   override def get = false
 
-  @JSExport override def toStandard: ast.JValue = ast.JFalse
+  override def toStandard: ast.JValue = ast.JFalse
 }
 
 case class JField(field: String, value: JValue)
@@ -190,9 +185,8 @@ object JObject {
   * @author Matthew de Detrich
   */
 // JObject is internally represented as a mutable Array, to improve sequential performance
-case class JObject(@(JSExport @field) value: js.Array[JField] = js.Array())
-    extends JValue {
-  @JSExport def this(value: js.Dictionary[JValue]) = {
+case class JObject(value: js.Array[JField] = js.Array()) extends JValue {
+  def this(value: js.Dictionary[JValue]) = {
     this({
       val array: js.Array[JField] = new js.Array()
       for (key <- value.keys) {
@@ -202,7 +196,7 @@ case class JObject(@(JSExport @field) value: js.Array[JField] = js.Array())
     })
   }
 
-  @JSExport override def toStandard: ast.JValue = {
+  override def toStandard: ast.JValue = {
     // Javascript array.length across all major browsers has near constant cost, so we
     // use this to build the array http://jsperf.com/length-comparisons
     val length = value.length
@@ -221,7 +215,7 @@ case class JObject(@(JSExport @field) value: js.Array[JField] = js.Array())
     }
   }
 
-  @JSExport override def toJsAny: js.Any = {
+  override def toJsAny: js.Any = {
     val length = value.length
 
     if (length == 0) {
@@ -252,10 +246,8 @@ object JArray {
   * @author Matthew de Detrich
   */
 // JArray is internally represented as a mutable js.Array, to improve sequential performance
-@JSExport
-case class JArray(@(JSExport @field) value: js.Array[JValue] = js.Array())
-    extends JValue {
-  @JSExport override def toStandard: ast.JValue = {
+case class JArray(value: js.Array[JValue] = js.Array()) extends JValue {
+  override def toStandard: ast.JValue = {
     // Javascript array.length across all major browsers has near constant cost, so we
     // use this to build the array http://jsperf.com/length-comparisons
     val length = value.length
@@ -272,5 +264,5 @@ case class JArray(@(JSExport @field) value: js.Array[JValue] = js.Array())
     }
   }
 
-  @JSExport override def toJsAny: js.Any = value
+  override def toJsAny: js.Any = value
 }

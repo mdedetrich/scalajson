@@ -8,4 +8,3 @@ jdk: oraclejdk8
 script:
    - sbt ++$TRAVIS_SCALA_VERSION "scalaJsonASTJVM/testOnly specs.*"
    - sbt ++$TRAVIS_SCALA_VERSION "scalaJsonASTJS/testOnly specs.*"
-   - sbt ++$TRAVIS_SCALA_VERSION "scalaJsonASTJS:jsTest"

@@ -80,8 +80,8 @@ case class JNumber(value: String) extends JValue {
     throw new NumberFormatException(value)
   }
 
-  def to[B](implicit bigDecimalConverter: JNumberConverter[B]) =
-    bigDecimalConverter(value)
+  def to[B](implicit jNumberConverter: JNumberConverter[B]) =
+    jNumberConverter(value)
 
   override def toUnsafe: unsafe.JValue = unsafe.JNumber(value)
 
