@@ -29,6 +29,40 @@ sealed abstract class JValue extends Product with Serializable {
   def toJsAny: js.Any
 }
 
+
+object JValue {
+  private val undefined = js.undefined
+
+  private def unsafeAny2JValue(input: Any): JValue = input match {
+    case null        => JNull
+    case s: String   => JString(s)
+    case b: Boolean  => JBoolean(b)
+    case d: Double   => JNumber(d.toString)
+    case `undefined` => JNull
+
+    case a: js.Array[js.Dynamic @unchecked] =>
+      JArray(a.map(v => unsafeAny2JValue(v)).toVector)
+
+    case o: js.Object =>
+      JObject(o.asInstanceOf[js.Dictionary[js.Dynamic]]
+        .map { case (k, v) => k -> unsafeAny2JValue(v) }.toMap)
+
+    case _ => throw new IllegalArgumentException()
+  }
+
+  /**
+    * Converts a Javascript object/value coming from Javascript to a [[JValue]].
+    *
+    * @return
+    */
+  def fromJsAny(json: js.Any): Option[JValue] =
+    try {
+      Some(unsafeAny2JValue(json))
+    } catch {
+      case e: IllegalArgumentException => None
+    }
+}
+
 /** Represents a JSON null value
   *
   * @author Matthew de Detrich

@@ -13,25 +13,26 @@ object JValue extends TestSuite with UTestScalaCheck {
   val tests = TestSuite {
     "The JString value should" - {
       "equals" - testEquals
+      "have a bijection with js.Any" - testBijection
     }
   }
 
   def testEquals =
     forAll { jValue: scala.json.ast.JValue =>
-      // Is there a better way to do this?
       val cloned = jValue match {
-        case scala.json.ast.JNull => scala.json.ast.JNull
-        case jNumber: scala.json.ast.JNumber =>
-          scala.json.ast.JNumber(jNumber.value)
-        case jString: scala.json.ast.JString =>
-          scala.json.ast.JString(jString.value)
-        case jArray: scala.json.ast.JArray =>
-          scala.json.ast.JArray(jArray.value)
-        case jObject: scala.json.ast.JObject =>
-          scala.json.ast.JObject(jObject.value)
-        case jBoolean: scala.json.ast.JBoolean =>
-          scala.json.ast.JBoolean(jBoolean.get)
+        case scala.json.ast.JNull       => scala.json.ast.JNull
+        case scala.json.ast.JTrue       => scala.json.ast.JTrue
+        case scala.json.ast.JFalse      => scala.json.ast.JFalse
+        case j: scala.json.ast.JNumber  => j.copy()
+        case j: scala.json.ast.JString  => j.copy()
+        case j: scala.json.ast.JArray   => j.copy()
+        case j: scala.json.ast.JObject  => j.copy()
       }
       jValue == cloned
+    }.checkUTest()
+
+  def testBijection =
+    forAll { jValue: scala.json.ast.JValue =>
+      scala.json.ast.JValue.fromJsAny(jValue.toJsAny) == Some(jValue)
     }.checkUTest()
 }

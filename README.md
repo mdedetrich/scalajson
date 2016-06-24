@@ -37,9 +37,9 @@ Implementation is in `scala.json.ast.JValue`
     - `scala.json.ast.JObject` is an actual `Map[String,JValue]`. This means that it doesn't handle duplicate keys for a `scala.json.ast.JObject`,
     nor does it handle key ordering.
     - `scala.json.ast.JArray` is an `Vector`.
-- Library does not allow invalid JSON in the representation and hence we can guarantee that a `scala.json.ast.JValue` will 
-always contain a valid structure that can be serialized/rendered into [JSON](https://en.wikipedia.org/wiki/JSON). 
-  - Note that you can lose precision when using `scala.json.ast.JNumber` in `Scala.js` (see `Scala.js` 
+- Library does not allow invalid JSON in the representation and hence we can guarantee that a `scala.json.ast.JValue` will
+always contain a valid structure that can be serialized/rendered into [JSON](https://en.wikipedia.org/wiki/JSON).
+  - Note that you can lose precision when using `scala.json.ast.JNumber` in `Scala.js` (see `Scala.js`
 section for more info).
 - Due to the above, has properly implemented deep equality for all types of `scala.json.ast.JValue`
 
@@ -61,7 +61,7 @@ Implementation is in `scala.json.unsafe.JValue`
 can be considered valid under the official [JSON spec](https://www.ietf.org/rfc/rfc4627.txt), even if its not considered sane (i.e.
 duplicate keys for a `scala.json.ast.unsafe.JObject`).
   - Also means it can hold invalid data, due to not doing runtime checks
-- Is referentially transparent in regards to `String` -> `scala.json.ast.unsafe.JValue` -> `String` since `scala.json.ast.unsafe.JObject` 
+- Is referentially transparent in regards to `String` -> `scala.json.ast.unsafe.JValue` -> `String` since `scala.json.ast.unsafe.JObject`
   preserves ordering/duplicate keys
 
 ## Conversion between scala.json.JValue and scala.json.ast.unsafe.JValue
@@ -69,25 +69,25 @@ duplicate keys for a `scala.json.ast.unsafe.JObject`).
 Any `scala.json.ast.JValue` implements a conversion to `scala.json.ast.unsafe.JValue` with a `toUnsafe` method and vice versa with a
 `toStandard` method. These conversion methods have been written to be as fast as possible.
 
-There are some peculiarities when converting between the two AST's. When converting a `scala.json.ast.unsafe.JNumber` to a 
-`scala.json.ast.JNumber`, it is possible for this to fail at runtime (since the internal representation of 
-`scala.json.ast.unsafe.JNumber` is a `String` and it doesn't have a runtime check). It is up to the caller on how to handle this error (and when), 
+There are some peculiarities when converting between the two AST's. When converting a `scala.json.ast.unsafe.JNumber` to a
+`scala.json.ast.JNumber`, it is possible for this to fail at runtime (since the internal representation of
+`scala.json.ast.unsafe.JNumber` is a `String` and it doesn't have a runtime check). It is up to the caller on how to handle this error (and when),
 a runtime check is deliberately avoided on our end for performance reasons.
 
-Converting from a `scala.json.ast.JObject` to a `scala.json.ast.unsafe.JObject` will produce 
+Converting from a `scala.json.ast.JObject` to a `scala.json.ast.unsafe.JObject` will produce
 an `scala.json.ast.unsafe.JObject` with an undefined ordering for its internal `Array`/`js.Array` representation.
 This is because a `Map` has no predefined ordering. If you wish to provide ordering, you will either need
 to write your own custom conversion to handle this case. Duplicate keys will also be removed for the same reason
 in an undefined manner.
 
-Do note that according to the JSON spec, whether to order keys for a `JObject` is not specified. Also note that `Map` 
+Do note that according to the JSON spec, whether to order keys for a `JObject` is not specified. Also note that `Map`
 disregards ordering for equality, however `Array`/`js.Array` equality takes ordering into account.
 
 ## .to[T] Conversion
 
-Both `scala.json.ast.JNumber` and `scala.json.ast.unsafe.JNumber` provide conversions using a `.to[T]` method. These methods 
+Both `scala.json.ast.JNumber` and `scala.json.ast.unsafe.JNumber` provide conversions using a `.to[T]` method. These methods
 provide a default fast implementations for converting between different number types (as well
-as stuff like `Char[Array]`). You can provide your own implementations of a `.to[T]` 
+as stuff like `Char[Array]`). You can provide your own implementations of a `.to[T]`
 conversion by creating an `implicit val` that implements a JNumberConverter, i.e.
 
 ```scala
@@ -101,15 +101,27 @@ implicit val myNumberConverter = new JNumberConverter[SomeNumberType]{
 Then you just need to provide this implementation in scope for usage
 
 ## Scala.js
+
 Scala json ast also provides support for [Scala.js](https://github.com/scala-js/scala-js).
 The usage of Scala.js mirros the usage of Scala on the JVM however Scala.js also implements
 a `.toJsAny` method which allows you to convert any
 `scala.json.ast.JValue`/`scala.json.ast.unsafe.JValue` to a Javascript value in `Scala.js`.
 
-Note that, since a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumer` is unlimited
+Constructing `JValue` from native Javascript object can be done using `JValue.fromJsAny`:
+
+```
+var jValue = new scala.json.ast.JValue.fromJsAny({
+  "someString": "string",
+  "someBool"  : true,
+  "someNumber": 324324.324,
+  "nullValue" : null
+});
+```
+
+Note that, since a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumber` is unlimited
 precision (represented internally as a `String`), calls to `.toJsAny` can lose precision on the
 underlying number (numbers in Javascript are represented as double precision floating point number).
-You can use the `.value` method on a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumer` to
+You can use the `.value` method on a `scala.json.ast.JNumber`/`scala.json.ast.unsafe.JNumber` to
 get the raw string value as a solution to this problem.
 
 ## jNumberRegex
