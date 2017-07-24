@@ -37,28 +37,26 @@ object JNumber extends TestSuite with UTestScalaCheck {
       "hashCode not equals e positive #2" - hashCodeNotEqualsEPositive2
       "convert toUnsafe" - toUnsafe
       "equals" - testEquals
-      "copy" - testCopy
-      "failing copy with NumberFormatException" - testCopyFail
     }
-
-    def readLongJNumber =
-      forAll { l: Long =>
-        scalajson.ast.JNumber(l).value == l.toString
-      }.checkUTest()
 
     def readBigDecimalJNumber =
       forAll { b: BigDecimal =>
-        scalajson.ast.JNumber(b).value == b.toString()
+        scalajson.ast.JNumber(b).toBigDecimal == Option(b)
       }.checkUTest()
 
     def readBigIntJNumber =
       forAll { b: BigInt =>
-        scalajson.ast.JNumber(b).value == b.toString
+        scalajson.ast.JNumber(b).toBigInt == Option(b)
+      }.checkUTest()
+
+    def readLongJNumber =
+      forAll { l: Long =>
+        scalajson.ast.JNumber(l).toLong == Option(l)
       }.checkUTest()
 
     def readIntJNumber =
       forAll { i: Int =>
-        scalajson.ast.JNumber(i).value == i.toString
+        scalajson.ast.JNumber(i).toInt == Option(i)
       }.checkUTest()
 
     def readDoubleJNumber =
@@ -121,7 +119,7 @@ object JNumber extends TestSuite with UTestScalaCheck {
 
     def readShortJNumber =
       forAll { s: Short =>
-        scalajson.ast.JNumber(s).value == s.toString
+        scalajson.ast.JNumber(s).stringValue == s.toString
       }.checkUTest()
 
     def hashCodeEqualsDecimal = {
@@ -211,26 +209,6 @@ object JNumber extends TestSuite with UTestScalaCheck {
     def testEquals =
       forAll { b: BigDecimal =>
         scalajson.ast.JNumber(b) == scalajson.ast.JNumber(b)
-      }.checkUTest()
-
-    def testCopy =
-      forAll { (b1: BigDecimal, b2: BigDecimal) =>
-        val asString = b2.toString()
-        scalajson.ast.JNumber(b1).copy(value = asString) == scalajson.ast
-          .JNumber(b2)
-      }.checkUTest()
-
-    def testCopyFail =
-      forAll { b: BigDecimal =>
-        try {
-          scalajson.ast.JNumber(b).copy(value = "not a number")
-          false
-        } catch {
-          case exception: NumberFormatException
-              if exception.getMessage == "not a number" =>
-            true
-          case _ => false
-        }
       }.checkUTest()
   }
 }

@@ -22,57 +22,64 @@ class JNumber extends Spec {
     convert toStandard $toStandard
   """
 
-  def readLongJNumber = prop { l: Long =>
-    JNumber(l).value must beEqualTo(l.toString)
-  }
 
   def readBigDecimalJNumber = prop { b: BigDecimal =>
-    JNumber(b).value must beEqualTo(b.toString())
+    JNumber(b).toBigDecimal must beEqualTo(Option(b))
   }
 
   def readBigIntJNumber = prop { b: BigInt =>
-    JNumber(b).value must beEqualTo(b.toString())
+    JNumber(b).toBigInt must beEqualTo(Option(b))
+  }
+
+  def readLongJNumber = prop { l: Long =>
+    JNumber(l).toLong must beEqualTo(Option(l))
   }
 
   def readIntJNumber = prop { i: Int =>
-    JNumber(i).value must beEqualTo(i.toString)
+    JNumber(i).toInt must beEqualTo(Option(i))
   }
 
   def readDoubleJNumber = prop { d: Double =>
-    JNumber(d).value must beEqualTo(d.toString)
+    JNumber(d) match {
+      case JNull                             => JNull must beEqualTo(JNull)
+      case num: scalajson.ast.unsafe.JNumber => num.toDouble must beEqualTo(d)
+    }
   }
 
   def readDoubleNANJNumber = {
-    JNumber(Double.NaN).value match {
-      case "NaN" => true
+    JNumber(Double.NaN) match {
+      case JNull => true
       case _ => false
     }
   }
 
   def readDoublePositiveInfinityJNumber = {
-    JNumber(Double.PositiveInfinity).value match {
-      case "Infinity" => true
+    JNumber(Double.PositiveInfinity) match {
+      case JNull => true
       case _ => false
     }
   }
 
   def readDoubleNegativeInfinityJNumber = {
-    JNumber(Double.NegativeInfinity).value match {
-      case "-Infinity" => true
+    JNumber(Double.NegativeInfinity) match {
+      case JNull => true
       case _ => false
     }
   }
 
   def readFloatJNumber = prop { f: Float =>
-    JNumber(f).value must beEqualTo(f.toString)
+    JNumber(f) match {
+      case JNull                             => JNull must beEqualTo(JNull)
+      case num: scalajson.ast.unsafe.JNumber => num.toDouble must beEqualTo(f.toDouble)
+    }
   }
 
   def readShortJNumber = prop { s: Short =>
-    JNumber(s).value must beEqualTo(s.toString)
+    JNumber(s).stringValue must beEqualTo(s.toString)
   }
 
   def readStringJNumber = prop { s: String =>
-    JNumber(s).value must beEqualTo(s.toString)
+    JNumber(s).get.stringValue must beEqualTo(s.toString)
   }
 
   def readStringJNumberDetect = prop { s: String =>
@@ -84,7 +91,7 @@ class JNumber extends Spec {
         .toOption
         .isEmpty
     } ==> {
-      scala.util.Try(BigDecimal(JNumber(s).value)).toOption.isEmpty must beTrue
+      scala.util.Try(BigDecimal(JNumber(s).get.stringValue)).toOption.isEmpty must beTrue
     }
   }
 

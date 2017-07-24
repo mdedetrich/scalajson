@@ -1,5 +1,6 @@
 package specs
 
+import scalajson.ast
 import scalajson.ast._
 
 class JNumber extends Spec {
@@ -36,30 +37,28 @@ class JNumber extends Spec {
     hashCode not equals e positive #2 $hashCodeNotEqualsEPositive2
     convert toUnsafe $toUnsafe
     equals $testEquals
-    "copy" $testCopy
-    "failing copy with NumberFormatException" $testCopyFail
   """
 
-  def readLongJNumber = prop { l: Long =>
-    JNumber(l).value must beEqualTo(l.toString)
-  }
-
   def readBigDecimalJNumber = prop { b: BigDecimal =>
-    JNumber(b).value must beEqualTo(b.toString())
+    JNumber(b).toBigDecimal must beEqualTo(Option(b))
   }
 
   def readBigIntJNumber = prop { b: BigInt =>
-    JNumber(b).value must beEqualTo(b.toString)
+    JNumber(b).toBigInt must beEqualTo(Option(b))
+  }
+
+  def readLongJNumber = prop { l: Long =>
+    JNumber(l).toLong must beEqualTo(Option(l))
   }
 
   def readIntJNumber = prop { i: Int =>
-    JNumber(i).value must beEqualTo(i.toString)
+    JNumber(i).toInt must beEqualTo(Option(i))
   }
 
   def readDoubleJNumber = prop { d: Double =>
     JNumber(d) match {
-      case JNull => JNull must beEqualTo(JNull)
-      case JNumber(value) => value must beEqualTo(d.toString)
+      case JNull        => JNull must beEqualTo(JNull)
+      case num: ast.JNumber => num.toDouble must beEqualTo(d)
     }
   }
 
@@ -113,7 +112,7 @@ class JNumber extends Spec {
   }
 
   def readShortJNumber = prop { s: Short =>
-    JNumber(s).value must beEqualTo(s.toString)
+    JNumber(s).toInt must beEqualTo(Option(s.toInt))
   }
 
   def readCharArrayJNumber = {
@@ -204,24 +203,11 @@ class JNumber extends Spec {
   }
 
   def toUnsafe = prop { b: BigDecimal =>
-    scalajson.ast.JNumber(b).toUnsafe must beEqualTo(
+     scalajson.ast.JNumber(b).toUnsafe must beEqualTo(
       scalajson.ast.unsafe.JNumber(b))
   }
 
   def testEquals = prop { b: BigDecimal =>
     scalajson.ast.JNumber(b) must beEqualTo(scalajson.ast.JNumber(b))
   }
-
-  def testCopy =
-    prop { (b1: BigDecimal, b2: BigDecimal) =>
-      val asString = b2.toString()
-      scalajson.ast.JNumber(b1).copy(value = asString) must beEqualTo(
-        scalajson.ast.JNumber(b2))
-    }
-
-  def testCopyFail =
-    prop { b: BigDecimal =>
-      scalajson.ast.JNumber(b).copy(value = "not a number") must throwA(
-        new NumberFormatException("not a number"))
-    }
 }

@@ -19,7 +19,7 @@ object JValue extends TestSuite with UTestScalaCheck {
       val cloned = jValue match {
         case scalajson.ast.unsafe.JNull => scalajson.ast.unsafe.JNull
         case jNumber: scalajson.ast.unsafe.JNumber =>
-          scalajson.ast.unsafe.JNumber(jNumber.value)
+          scalajson.ast.unsafe.JNumber(jNumber.stringValue).get
         case jString: scalajson.ast.unsafe.JString =>
           scalajson.ast.unsafe.JString(jString.value)
         case jArray: scalajson.ast.unsafe.JArray =>

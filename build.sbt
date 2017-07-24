@@ -93,19 +93,6 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform)
   .in(file("."))
   .settings(
     commonSettings,
-    // In our build, implementations are specific due to use using sealed traits so a build defined
-    // in scala-2.10 can't use the same sources as the generic 'scala' build. This removes the 'scala'
-    // directory from sources when building for Scala 2.10.x
-    (unmanagedSourceDirectories in Compile) := {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) if n >= 11 =>
-          (unmanagedSourceDirectories in Compile).value
-        case Some((2, n)) if n == 10 =>
-          (unmanagedSourceDirectories in Compile).value.filter { x =>
-            !x.getName.endsWith("scala")
-          }
-      }
-    },
     scalacOptions += {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) if n >= 12 =>

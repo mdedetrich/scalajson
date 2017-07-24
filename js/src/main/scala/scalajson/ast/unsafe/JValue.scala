@@ -53,51 +53,279 @@ final case class JString(value: String) extends JValue {
   override def toJsAny: js.Any = value
 }
 
-object JNumber {
-  def apply(value: Int): JNumber = JNumber(value.toString)
+/**
+ * Represents a JSON number.
+ */
+sealed abstract class JNumber extends JValue {
+  override def equals(obj: Any): Boolean = JNumber.jnumberEquals(this, obj)
 
-  def apply(value: Long): JNumber = JNumber(value.toString)
+  override def toString: String = stringValue
 
-  def apply(value: BigInt): JNumber = JNumber(value.toString)
+  /** String representation of the number. */
+  def stringValue: String
 
-  def apply(value: BigDecimal): JNumber = JNumber(value.toString)
+  override def toStandard: ast.JValue = JNumber.toStandard(this)
 
-  def apply(value: Float): JNumber = JNumber(value.toString)
+  override def hashCode: Int = JNumber.jnumberHashCode(this)
 
-  def apply(value: Double): JNumber = JNumber(value.toString)
+  /**
+   * Return this number as a [[scala.math.BigDecimal]].
+   */
+  def toBigDecimal: Option[BigDecimal]
 
-  def apply(value: Integer): JNumber = JNumber(value.toString)
+  /**
+   * Return this number as a [[scala.math.BigInt]] if it's a sufficiently small whole number.
+   */
+  def toBigInt: Option[BigInt]
 
-  def apply(value: Array[Char]): JNumber = JNumber(new String(value))
-}
+  /**
+   * Return this number as a [[scala.Long]] if it's a valid [[scala.Long]].
+   */
+  def toLong: Option[Long]
 
-/** Represents a JSON number value.
-  *
-  * If you are passing in a NaN or Infinity as a [[scala.Double]], [[unsafe.JNumber]]
-  * will contain "NaN" or "Infinity" as a String which means it will cause
-  * issues for users when they use the value at runtime. It may be
-  * preferable to check values yourself when constructing [[unsafe.JValue]]
-  * to prevent this. This isn't checked by default for performance reasons.
-  *
-  * @author Matthew de Detrich
-  */
-// JNumber is internally represented as a string, to improve performance
-final case class JNumber(value: String) extends JValue {
-  override def toStandard: ast.JValue =
-    value match {
-      case jNumberRegex(_ *) => new ast.JNumber(value)
-      case _ => throw new NumberFormatException(value)
-    }
+  /**
+   * Return this number as a [[scala.Int]] if it's a valid [[scala.Int]].
+   */
+  def toInt: Option[Int]
 
-  def this(value: Double) = {
-    this(value.toString)
-  }
+  /**
+   * Convert this number to its best [[scala.Double]] approximation.
+   */
+  def toDouble: Double
 
-  override def toJsAny: js.Any = value.toDouble match {
+  override def toJsAny: js.Any = toDouble match {
     case n if n.isNaN => null
     case n if n.isInfinity => null
     case n => n
   }
+}
+
+/**
+ * Constructors, type class instances, and other utilities for [[JNumber]].
+ */
+object JNumber {
+  def apply(value: BigDecimal): JNumber = JBigDecimal(value)
+  def apply(value: BigInt): JNumber = JBigInt(value)
+  def apply(value: Long): JNumber = JLong(value)
+  def apply(value: Int): JNumber = JInt(value)
+  def apply(value: Short): JNumber = JInt(value.toInt)
+
+  /**
+    * @param value
+    * @return Will return a [[JNull]] if value is a Nan or Infinity
+    */
+  def apply(value: Double): JValue = fromDouble(value)
+
+  /**
+    * @param value
+    * @return Will return a [[JNull]] if value is a Nan or Infinity
+    */
+  def fromDouble(value: Double): JValue = value match {
+    case n if n.isNaN => JNull
+    case n if n.isInfinity => JNull
+    case _ => JDouble(value)
+  }
+
+  /**
+    * @param value
+    * @return Will return a [[JNull]] if value is a Nan or Infinity
+    */
+  def apply(value: Float): JValue = fromFloat(value)
+
+  /**
+    * @param value
+    * @return Will return a [[JNull]] if value is a Nan or Infinity
+    */
+  def fromFloat(value: Float): JValue = value match {
+    case n if java.lang.Float.isNaN(n) => JNull
+    case n if n.isInfinity => JNull
+    case _ => JFloat(value)
+  }
+
+  def apply(value: Array[Char]): Option[JNumber] = fromString(new String(value))
+
+  def apply(value: String): Option[JNumber] = fromString(value)
+
+  def fromString(value: String): Option[JNumber] = Option(JStringDecimal(value))
+
+  def unapply(value: JNumber): Option[String] = Option(value.stringValue)
+
+  private[ast] def jnumberEquals(value: JNumber, obj: Any): Boolean =
+    (value, obj) match {
+      case (JStringDecimal(x), JStringDecimal(y)) => x == y  
+      case (JBigDecimal(x), JBigDecimal(y))       => x == y
+      case (JBigInt(x), JBigInt(y))               => x == y
+      case (JLong(x), JLong(y))                   => x == y
+      case (JInt(x), JInt(y))                     => x == y
+      case (JDouble(x), JDouble(y))               => x == y
+      case (JFloat(x), JFloat(y))                 => x == y
+      case (x, y: JNumber)  => x.stringValue == y.stringValue
+      case _                => false
+    }
+
+  private[ast] def jnumberHashCode(value: JNumber): Int =
+    numericStringHashcode(value.stringValue)
+
+  private[ast] def toStandard(value: JNumber): ast.JValue =
+    value match {
+      case JStringDecimal(value) => ast.JStringDecimal(value)
+      case JBigDecimal(value)    => ast.JBigDecimal(value)
+      case JBigInt(value)        => ast.JBigInt(value)
+      case JLong(value)          => ast.JLong(value)
+      case JInt(value)           => ast.JInt(value)
+      case JDouble(value)        => ast.JDouble(value)
+      case JFloat(value)         => ast.JFloat(value)
+    }
+}
+
+/**
+ * Represent a JSON number as a `String`.
+ */
+private[ast] final case class JStringDecimal(value: String) extends JNumber {
+  override def stringValue: String = value
+
+  // "1e2147483648" is a valid JSON number, but will overflow BigDecimal.
+  override final def toBigDecimal: Option[BigDecimal] =
+    try {
+      Option(BigDecimal(value))
+    } catch {
+      case _: NumberFormatException => None
+    }
+
+  override final def toBigInt: Option[BigInt] =
+    try {
+      Option(BigInt(value))
+    } catch {
+      case _: NumberFormatException => None
+    }
+
+  override final def toLong: Option[Long] =
+    try {
+      Option(value.toLong)
+    } catch {
+      case _: NumberFormatException => None
+    }
+
+  override final def toInt: Option[Int] =
+    try {
+      Option(value.toInt)
+    } catch {
+      case _: NumberFormatException => None
+    }
+
+  override final def toDouble: Double = value.toDouble
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.math.BigDecimal]].
+ */
+private[ast] final case class JBigDecimal(value: BigDecimal) extends JNumber {
+  override def stringValue: String = value.toString
+  override final def toBigDecimal: Option[BigDecimal] = Option(value)
+  override final def toBigInt: Option[BigInt] = value.toBigIntExact
+
+  override final def toLong: Option[Long] =
+    if (value.isValidLong) Option(value.toLong)
+    else None
+
+  override final def toInt: Option[Int] =
+    if (value.isValidInt) Option(value.toInt)
+    else None
+
+  final def toDouble: Double = value.doubleValue
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.BigInt]].
+ */
+private[ast] final case class JBigInt(value: BigInt) extends JNumber {
+  override def stringValue: String = value.toString
+  override final def toBigDecimal: Option[BigDecimal] = Option(BigDecimal(value))
+  override final def toBigInt: Option[BigInt] = Option(value)
+
+  override final def toLong: Option[Long] =
+    if (value.isValidLong) Option(value.toLong)
+    else None
+
+  override final def toInt: Option[Int] =
+    if (value.isValidLong) Option(value.toInt)
+    else None
+
+  final def toDouble: Double = value.doubleValue
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.Long]].
+ */
+private[ast] final case class JLong(value: Long) extends JNumber {
+  override def stringValue: String = java.lang.Long.toString(value)
+  override final def toBigDecimal: Option[BigDecimal] = Option(BigDecimal(value))
+  override final def toBigInt: Option[BigInt] = Option(BigInt(value))
+  override final def toLong: Option[Long] = Option(value)
+
+  override final def toInt: Option[Int] = {
+    val asBigDecimal = BigDecimal(value)
+    if (asBigDecimal.isValidInt) Option(asBigDecimal.toInt)
+    else None 
+  }
+
+  final def toDouble: Double = value.toDouble
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.Int]].
+ */
+private[ast] final case class JInt(value: Int) extends JNumber {
+  override def stringValue: String = java.lang.Integer.toString(value)
+  override final def toBigDecimal: Option[BigDecimal] = Option(BigDecimal(value))
+  override final def toBigInt: Option[BigInt] = Option(BigInt(value))
+  override final def toLong: Option[Long] = Option(value.toLong)
+  override final def toInt: Option[Int] = Option(value)
+  override final def toDouble: Double = value.toDouble
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.Double]].
+ */
+private[ast] final case class JDouble(value: Double) extends JNumber {
+  override def stringValue: String = java.lang.Double.toString(value)
+  override final def toBigDecimal: Option[BigDecimal] = Option(BigDecimal(value))
+  override final def toBigInt: Option[BigInt] = JDouble.toBigInt(value)
+  override final def toLong: Option[Long] = JDouble.toLong(value)
+  override final def toInt: Option[Int] = JDouble.toInt(value)
+  override final def toDouble: Double = value
+}
+
+private [ast] object JDouble {
+  def toBigInt(value: Double): Option[BigInt] = {
+    val asBigDecimal = BigDecimal(value)
+    if (asBigDecimal.isWhole) asBigDecimal.toBigIntExact
+    else None 
+  }
+
+  def toLong(value: Double): Option[Long] = {
+    val asBigDecimal = BigDecimal(value)
+    if (asBigDecimal.isValidLong) Option(asBigDecimal.toLong)
+    else None
+  }
+
+  def toInt(value: Double): Option[Int] = {
+    val asBigDecimal = BigDecimal(value)
+    if (asBigDecimal.isValidInt) Option(asBigDecimal.toInt)
+    else None
+  }
+}
+
+/**
+ * Represent a valid JSON number as a [[scala.Float]].
+ */
+private[ast] final case class JFloat(value: Float) extends JNumber {
+  override def stringValue: String = java.lang.Float.toString(value)
+  override final def toBigDecimal: Option[BigDecimal] = Option(BigDecimal(value.toDouble))
+  override final def toBigInt: Option[BigInt] = JDouble.toBigInt(value.toDouble)
+  override final def toLong: Option[Long] = JDouble.toLong(value.toDouble)
+  override final def toInt: Option[Int] = JDouble.toInt(value.toDouble)
+  override final def toDouble: Double = value.toDouble
 }
 
 /** Represents a JSON Boolean value, which can either be a

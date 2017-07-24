@@ -50,8 +50,7 @@ object Generators {
   }
 
   implicit def arbJsNumber: Arbitrary[scalajson.ast.JNumber] = Arbitrary {
-    genSafeBigDecimal map (x =>
-      scalajson.ast.JNumber.fromString(x.toString()).get)
+    genSafeBigDecimal map (x => scalajson.ast.JNumber(x))
   }
 
   implicit def arbJsBoolean: Arbitrary[scalajson.ast.JBoolean] = Arbitrary {
