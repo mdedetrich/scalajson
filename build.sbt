@@ -69,6 +69,7 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform)
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
+// In sbt 1.0.3, we will be able to make this the default name 'scalajson' by changing the id
 lazy val scalaJsonJVM = scalaJson.jvm
 lazy val scalaJsonJS = scalaJson.js
 
@@ -80,5 +81,5 @@ lazy val benchmark = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies += Dependencies.scalameter,
   )
 
-lazy val scalaJsonJVMTest = benchmark.jvm
-lazy val scalaJsonJSTest = benchmark.js
+lazy val benchmarkJVM = benchmark.jvm
+lazy val benchmarkJS = benchmark.js
