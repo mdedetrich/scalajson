@@ -1,22 +1,16 @@
 name := "scalajson"
 
-import PgpKeys.publishSigned
-
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.crossProject
 
-val currentScalaVersion = "2.11.11"
-val scala210Version = "2.10.6"
-val scala212Version = "2.12.2"
 val scalaCheckVersion = "1.13.4"
 val specs2Version = "3.9.1"
 
-scalaVersion in ThisBuild := currentScalaVersion
-crossScalaVersions in ThisBuild := Seq(currentScalaVersion,
-                                       scala212Version,
-                                       scala210Version)
-
-autoAPIMappings := true
+inThisBuild(List(
+  scalaVersion := ScalaVersions.latest212,
+  crossScalaVersions :=
+    List(ScalaVersions.latest210, ScalaVersions.latest211, ScalaVersions.latest212),
+))
 
 val flagsFor10 = Seq(
   "-Xlint",
@@ -39,14 +33,9 @@ val flagsFor12 = Seq(
   "-opt:l:project"
 )
 
-lazy val root = project
+lazy val root = makeRoot(project)
   .in(file("."))
   .aggregate(scalaJsonJS, scalaJsonJVM)
-  .settings(
-    publish := {},
-    publishLocal := {},
-    publishSigned := {}
-  )
 
 lazy val commonSettings = Seq(
   name := "scalajson",
