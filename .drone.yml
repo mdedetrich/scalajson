@@ -1,0 +1,67 @@
+matrix:
+  include:
+    - SCALA_VERSION: 2.12.2
+      RUN_MIMA: true
+      SCALA_PLATFORM_JDK_VERSION: 8
+    - SCALA_VERSION: 2.11.11
+      RUN_MIMA: false
+      SCALA_PLATFORM_JDK_VERSION: 7
+    - SCALA_VERSION: 2.10.6
+      RUN_MIMA: false
+      SCALA_PLATFORM_JDK_VERSION: 7
+
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    when:
+      event: [ push, pull_request, tag, deployment ]
+    mount:
+      - /drone/.ivy2/cache
+      - /drone/.coursier/cache
+      - /drone/.sbt
+    volumes:
+      - /tmp/cache:/cache
+
+  build:
+    image: scalaplatform/scala:2.0
+    commands:
+      - git log | head -n 20
+      - sbt clean coverage test coverageReport
+      - sbt ++$SCALA_VERSION test benchmarkJVM/test:compile benchmarkJS/test:compile
+      #  - if [ "$RUN_MIMA" == "true" ]; then sbt ++$TRAVIS_SCALA_VERSION "+scalaJsonJVM/mimaReportBinaryIssues" ; fi
+      - curl -s https://codecov.io/bash | bash -
+
+  publish:
+    image: scalaplatform/scala-publish:2.0
+    volumes:
+      - /platform:/keys
+    secrets: [ sonatype_user, sonatype_password, github_platform_token, pgp_password ]
+    when:
+      event: [ push, tag, deployment ]
+      branch: master
+      status: success
+      matrix:
+        SCALA_VERSION: 2.12.2
+    commands:
+      - git log | head -n 20
+      - sbt +releaseEarly
+
+  clean:
+    image: scalaplatform/scala:2.0
+    commands:
+      - find $HOME/.sbt -name "*.lock" -type f -delete
+      - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    when:
+      event: [ push, pull_request, tag, deployment ]
+      status: [ success, failure ]
+    mount:
+      - /drone/.ivy2/cache
+      - /drone/.coursier/cache
+      - /drone/.sbt
+    volumes:
+      - /tmp/cache:/cache

@@ -1,90 +1,27 @@
-name := "scalajson"
-
-import PgpKeys.publishSigned
-
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.crossProject
+import Util.mkGitHubDeveloper
 
-val currentScalaVersion = "2.11.11"
-val scala210Version = "2.10.6"
-val scala212Version = "2.12.2"
-val scalaCheckVersion = "1.13.4"
-val specs2Version = "3.9.1"
+inScope(Scope.GlobalScope)(List(
+  developers := List(
+    mkGitHubDeveloper("mdedetrich", "Matthew de Detrich", "mdedetrich@gmail.com")
+  ),
+))
 
-scalaVersion in ThisBuild := currentScalaVersion
-crossScalaVersions in ThisBuild := Seq(currentScalaVersion,
-                                       scala212Version,
-                                       scala210Version)
+inThisBuild(List(
+  scalaVersion := ScalaVersions.latest211,
+  crossScalaVersions :=
+    List(ScalaVersions.latest210, ScalaVersions.latest211, ScalaVersions.latest212),
+  scalacOptions ++= Util.defaultScalacOptions,
+))
 
-autoAPIMappings := true
-
-val flagsFor10 = Seq(
-  "-Xlint",
-  "-Yclosure-elim",
-  "-Ydead-code"
-)
-
-val flagsFor11 = Seq(
-  "-Xlint:_",
-  "-Yconst-opt",
-  "-Ywarn-infer-any",
-  "-Yclosure-elim",
-  "-Ydead-code",
-  "-Xsource:2.12" // required to build case class construction
-)
-
-val flagsFor12 = Seq(
-  "-Xlint:_",
-  "-Ywarn-infer-any",
-  "-opt:l:project"
-)
-
-lazy val root = project
+lazy val root = makeRoot(project)
   .in(file("."))
   .aggregate(scalaJsonJS, scalaJsonJVM)
-  .settings(
-    publish := {},
-    publishLocal := {},
-    publishSigned := {}
-  )
 
 lazy val commonSettings = Seq(
   name := "scalajson",
-  version := "1.0.0-M4",
-  organization := "org.scala-lang.platform",
-  scalacOptions ++= Seq(
-    "-encoding",
-    "UTF-8",
-    "-deprecation", // warning and location for usages of deprecated APIs
-    "-feature", // warning and location for usages of features that should be imported explicitly
-    "-unchecked", // additional warnings where generated code depends on assumptions
-    "-Xlint", // recommended additional warnings
-    "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
-    "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
-    "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
-    "-Ywarn-inaccessible",
-    "-Ywarn-dead-code"
-  ),
-  publishMavenStyle := true,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
-  publishArtifact in Test := false,
   pomIncludeRepository := (_ => false),
-  homepage := Some(url("https://github.com/mdedetrich/scalajson")),
-  scmInfo := Some(
-    ScmInfo(url("https://github.com/mdedetrich/scalajson"),
-            "git@github.com:mdedetrich/scalajson.git")),
-  developers := List(
-    Developer("mdedetrich",
-              "Matthew de Detrich",
-              "mdedetrich@gmail.com",
-              url("https://github.com/mdedetrich"))
-  ),
   licenses += ("BSD 3 Clause", url(
     "https://opensource.org/licenses/BSD-3-Clause"))
 )
@@ -92,7 +29,7 @@ lazy val commonSettings = Seq(
 lazy val scalaJson = crossProject(JSPlatform, JVMPlatform)
   .in(file("."))
   .settings(
-    commonSettings,
+    name := "scalajson",
     // In our build, implementations are specific due to use using sealed traits so a build defined
     // in scala-2.10 can't use the same sources as the generic 'scala' build. This removes the 'scala'
     // directory from sources when building for Scala 2.10.x
@@ -106,57 +43,45 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform)
           }
       }
     },
-    scalacOptions += {
+    scalacOptions ++= {
+      import Util.{flagsFor12, flagsFor11, flagsFor10}
       CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) if n >= 12 =>
-          "-target:jvm-1.8"
-        case _ =>
-          "-target:jvm-1.6"
+        case Some((2, n)) if n >= 12 => flagsFor12 :+ "-target:jvm-1.8"
+        case Some((2, n)) if n == 11 => flagsFor11 :+ "-target:jvm-1.6"
+        case Some((2, n)) if n == 10 => flagsFor10 :+ "-target:jvm-1.6"
+        case v => sys.error(s"Unsupported Scala version $v")
       }
     },
-    scalacOptions ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) if n >= 12 =>
-          flagsFor12
-        case Some((2, n)) if n == 11 =>
-          flagsFor11
-        case Some((2, n)) if n == 10 =>
-          flagsFor10
-      }
-    }
   )
   .jvmSettings(
     // Add JVM-specific settings here
-    libraryDependencies ++= Seq(
-      "org.specs2" %% "specs2-core" % specs2Version % Test,
-      "org.specs2" %% "specs2-scalacheck" % specs2Version % Test,
-      "org.scalacheck" %% "scalacheck" % scalaCheckVersion % Test
-    ),
+    libraryDependencies ++=
+      Seq(Dependencies.specs2Core, Dependencies.specs2ScalaCheck, Dependencies.scalaCheck),
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    mimaPreviousArtifacts := Set(
-      "org.scala-lang.platform" %% "scalajson" % "1.0.0-M3")
+    mimaPreviousArtifacts := Set("org.scala-lang.platform" %% "scalajson" % "1.0.0-M3"),
+    javaHome in Test := Some(file("/usr/lib/jvm/java-7-openjdk")),
+    fork in Test := true,
   )
   .jsSettings(
     // Add JS-specific settings here
     libraryDependencies ++= Seq(
-      "org.scalacheck" %%% "scalacheck" % scalaCheckVersion % Test,
-      "com.lihaoyi" %%% "utest" % "0.4.4" % Test
+      "com.lihaoyi" %%% "utest" % Dependencies.utestVersion % Test,
+      "org.scalacheck" %%% "scalacheck" % Dependencies.scalaCheckVersion % Test
     ),
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
-lazy val benchmark = crossProject(JSPlatform, JVMPlatform)
-  .in(file("benchmark"))
-  .jvmSettings(
-    testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
-    libraryDependencies ++= Seq(
-      "com.storm-enroute" %% "scalameter" % "0.8.2" % Test
-    )
-  )
-  .dependsOn(scalaJson)
-
-lazy val scalaJsonJVMTest = benchmark.jvm
-lazy val scalaJsonJSTest = benchmark.js
-
+// In sbt 1.0.3, we will be able to make this the default name 'scalajson' by changing the id
 lazy val scalaJsonJVM = scalaJson.jvm
 lazy val scalaJsonJS = scalaJson.js
+
+lazy val benchmark = crossProject(JSPlatform, JVMPlatform)
+  .in(file("benchmark"))
+  .dependsOn(scalaJson)
+  .jvmSettings(
+    testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
+    libraryDependencies += Dependencies.scalameter,
+  )
+
+lazy val benchmarkJVM = benchmark.jvm
+lazy val benchmarkJS = benchmark.js
