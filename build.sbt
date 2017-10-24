@@ -9,7 +9,7 @@ inScope(Scope.GlobalScope)(List(
 ))
 
 inThisBuild(List(
-  scalaVersion := ScalaVersions.latest212,
+  scalaVersion := ScalaVersions.latest211,
   crossScalaVersions :=
     List(ScalaVersions.latest210, ScalaVersions.latest211, ScalaVersions.latest212),
   scalacOptions ++= Util.defaultScalacOptions,
@@ -58,7 +58,9 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++=
       Seq(Dependencies.specs2Core, Dependencies.specs2ScalaCheck, Dependencies.scalaCheck),
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    mimaPreviousArtifacts := Set("org.scala-lang.platform" %% "scalajson" % "1.0.0-M3")
+    mimaPreviousArtifacts := Set("org.scala-lang.platform" %% "scalajson" % "1.0.0-M3"),
+    javaHome in Test := Some(file("/usr/lib/jvm/java-7-openjdk")),
+    fork in Test := true,
   )
   .jsSettings(
     // Add JS-specific settings here
