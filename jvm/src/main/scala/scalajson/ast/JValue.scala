@@ -40,11 +40,14 @@ final case class JString(value: String) extends JValue {
   * return a JNull
   */
 object JNumber {
-  def apply(value: Int): JNumber = new JNumber(value.toString)
+  def apply(value: Int): JNumber =
+    new JNumber(value.toString)(NumberFlags.intConstructed)
 
-  def apply(value: Long): JNumber = new JNumber(value.toString)
+  def apply(value: Long): JNumber =
+    new JNumber(value.toString)(NumberFlags.longConstructed)
 
-  def apply(value: BigInt): JNumber = new JNumber(value.toString)
+  def apply(value: BigInt): JNumber =
+    new JNumber(value.toString)(NumberFlags.bigIntConstructed)
 
   /**
     * @param value
@@ -53,10 +56,11 @@ object JNumber {
   def apply(value: Float): JValue = value match {
     case n if java.lang.Float.isNaN(n) => JNull
     case n if n.isInfinity             => JNull
-    case _                             => new JNumber(value.toString)
+    case _                             => new JNumber(value.toString)(NumberFlags.floatConstructed)
   }
 
-  def apply(value: BigDecimal): JNumber = new JNumber(value.toString())
+  def apply(value: BigDecimal): JNumber =
+    new JNumber(value.toString())(NumberFlags.bigDecimalConstructed)
 
   /**
     * @param value
@@ -65,10 +69,11 @@ object JNumber {
   def apply(value: Double): JValue = value match {
     case n if n.isNaN      => JNull
     case n if n.isInfinity => JNull
-    case _                 => new JNumber(value.toString)
+    case _                 => new JNumber(value.toString)(NumberFlags.doubleConstructed)
   }
 
-  def apply(value: Integer): JNumber = new JNumber(value.toString)
+  def apply(value: Integer): JNumber =
+    new JNumber(value.toString)(NumberFlags.intConstructed)
 
   def apply(value: Array[Char]): Option[JNumber] =
     fromString(new String(value))
@@ -77,7 +82,7 @@ object JNumber {
 
   def fromString(value: String): Option[JNumber] =
     value match {
-      case jNumberRegex(_*) => Some(new JNumber(value))
+      case jNumberRegex(_*) => Some(new JNumber(value)(0))
       case _                => None
     }
 }
@@ -88,8 +93,11 @@ object JNumber {
   *
   * @author Matthew de Detrich
   */
-final case class JNumber private[ast] (value: String) extends JValue {
-  override def toUnsafe: unsafe.JValue = unsafe.JNumber(value)
+final case class JNumber private[ast] (value: String)(
+    private[ast] val constructedFlag: Int)
+    extends JValue {
+  override def toUnsafe: unsafe.JValue =
+    new unsafe.JNumber(value, constructedFlag)
 
   override def equals(obj: Any): Boolean =
     obj match {
@@ -103,9 +111,93 @@ final case class JNumber private[ast] (value: String) extends JValue {
 
   def copy(value: String): JNumber =
     value match {
-      case jNumberRegex(_*) => new JNumber(value)
+      case jNumberRegex(_*) => new JNumber(value)(0)
       case _                => throw new NumberFormatException(value)
     }
+
+  def toInt: Option[Long] = {
+    if ((constructedFlag & NumberFlags.int) == NumberFlags.int)
+      Some(value.toInt)
+    else {
+      try {
+        val asInt = value.toInt
+        if (BigInt(value) == BigInt(asInt))
+          Some(asInt)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toLong: Option[Long] = {
+    if ((constructedFlag & NumberFlags.long) == NumberFlags.long)
+      Some(value.toLong)
+    else {
+      try {
+        val asLong = value.toLong
+        if (BigInt(value) == BigInt(asLong))
+          Some(asLong)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toBigInt: Option[BigInt] = {
+    if ((constructedFlag & NumberFlags.bigInt) == NumberFlags.bigInt)
+      Some(BigInt(value))
+    else {
+      try {
+        Some(BigInt(value))
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toBigDecimal: Option[BigDecimal] = {
+    try {
+      Some(BigDecimal(value))
+    } catch {
+      case _: NumberFormatException => None
+    }
+  }
+
+  def toFloat: Option[Float] = {
+    if ((constructedFlag & NumberFlags.float) == NumberFlags.float)
+      Some(value.toFloat)
+    else {
+      try {
+        val asFloat = value.toFloat
+        if (BigDecimal(value) == BigDecimal(asFloat.toDouble))
+          Some(asFloat)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toDouble: Option[Double] = {
+    if ((constructedFlag & NumberFlags.double) == NumberFlags.double)
+      Some(value.toDouble)
+    else {
+      try {
+        val asDouble = value.toDouble
+        if (BigDecimal(value) == BigDecimal(asDouble))
+          Some(asDouble)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
 }
 
 /** Represents a JSON Boolean value, which can either be a

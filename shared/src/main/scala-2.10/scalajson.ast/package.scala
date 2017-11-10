@@ -4,6 +4,27 @@ import scala.util.matching.Regex
 
 package object ast {
 
+  // Bit flags that are used for storing how a number was constructed
+
+  object NumberFlags {
+    @inline private[ast] final def int: Int = 1
+    @inline private[ast] final def long: Int = 2
+    @inline private[ast] final def bigInt: Int = 4
+    @inline private[ast] final def bigDecimal: Int = 8
+    @inline private[ast] final def float: Int = 16
+    @inline private[ast] final def double: Int = 32
+
+    @inline private[ast] final val intConstructed
+      : Int = int | long | bigInt | bigDecimal
+    @inline private[ast] final val longConstructed
+      : Int = long | bigInt | bigDecimal
+    @inline private[ast] final val bigIntConstructed: Int = bigInt
+    @inline private[ast] final val bigDecimalConstructed: Int = bigDecimal
+    @inline private[ast] final val floatConstructed
+      : Int = float | double | bigDecimal
+    @inline private[ast] final val doubleConstructed: Int = double | bigDecimal
+  }
+
   /**
     * A regex that will match any valid JSON number for unlimited
     * precision

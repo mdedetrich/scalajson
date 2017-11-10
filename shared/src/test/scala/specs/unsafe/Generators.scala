@@ -189,7 +189,7 @@ object Generators {
     case obj: scalajson.ast.unsafe.JObject => shrink(obj)
     case scalajson.ast.unsafe.JString(str) =>
       shrink(str) map scalajson.ast.unsafe.JString
-    case scalajson.ast.unsafe.JNumber(num) =>
+    case scalajson.ast.unsafe.JNumber(num, _) =>
       shrink(num) map (x => scalajson.ast.unsafe.JNumber(x))
     case scalajson.ast.unsafe.JNull | scalajson.ast.unsafe.JBoolean(_) =>
       Stream.empty[scalajson.ast.unsafe.JValue]

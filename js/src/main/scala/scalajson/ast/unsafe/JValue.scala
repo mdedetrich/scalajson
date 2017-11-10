@@ -54,21 +54,28 @@ final case class JString(value: String) extends JValue {
 }
 
 object JNumber {
-  def apply(value: Int): JNumber = JNumber(value.toString)
+  def apply(value: Int): JNumber =
+    new JNumber(value.toString, NumberFlags.intConstructed)
 
-  def apply(value: Long): JNumber = JNumber(value.toString)
+  def apply(value: Long): JNumber =
+    new JNumber(value.toString, NumberFlags.longConstructed)
 
-  def apply(value: BigInt): JNumber = JNumber(value.toString)
+  def apply(value: BigInt): JNumber =
+    new JNumber(value.toString, NumberFlags.bigIntConstructed)
 
-  def apply(value: BigDecimal): JNumber = JNumber(value.toString)
+  def apply(value: BigDecimal): JNumber =
+    new JNumber(value.toString, NumberFlags.bigDecimalConstructed)
 
-  def apply(value: Float): JNumber = JNumber(value.toString)
+  def apply(value: Float): JNumber =
+    new JNumber(value.toString, NumberFlags.floatConstructed)
 
-  def apply(value: Double): JNumber = JNumber(value.toString)
+  def apply(value: Double): JNumber =
+    new JNumber(value.toString, NumberFlags.doubleConstructed)
 
-  def apply(value: Integer): JNumber = JNumber(value.toString)
+  def apply(value: Integer): JNumber =
+    new JNumber(value.toString, NumberFlags.intConstructed)
 
-  def apply(value: Array[Char]): JNumber = JNumber(new String(value))
+  def apply(value: Array[Char]): JNumber = new JNumber(new String(value), 0)
 }
 
 /** Represents a JSON number value.
@@ -82,21 +89,112 @@ object JNumber {
   * @author Matthew de Detrich
   */
 // JNumber is internally represented as a string, to improve performance
-final case class JNumber(value: String) extends JValue {
+final case class JNumber(value: String, constructedFlag: Int = 0)
+    extends JValue {
   override def toStandard: ast.JValue =
     value match {
-      case jNumberRegex(_*) => new ast.JNumber(value)
+      case jNumberRegex(_*) => new ast.JNumber(value)(constructedFlag)
       case _                => throw new NumberFormatException(value)
     }
-
-  def this(value: Double) = {
-    this(value.toString)
-  }
 
   override def toJsAny: js.Any = value.toDouble match {
     case n if n.isNaN      => null
     case n if n.isInfinity => null
     case n                 => n
+  }
+
+  override def equals(obj: scala.Any): Boolean = {
+    obj match {
+      case jNumber: JNumber => jNumber.value == this.value
+      case _                => false
+    }
+  }
+
+  override def hashCode(): Int = value.##
+
+  def toInt: Option[Long] = {
+    if ((constructedFlag & NumberFlags.int) == NumberFlags.int)
+      Some(value.toInt)
+    else {
+      try {
+        val asInt = value.toInt
+        if (BigInt(value) == BigInt(asInt))
+          Some(asInt)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toLong: Option[Long] = {
+    if ((constructedFlag & NumberFlags.long) == NumberFlags.long)
+      Some(value.toLong)
+    else {
+      try {
+        val asLong = value.toLong
+        if (BigInt(value) == BigInt(asLong))
+          Some(asLong)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toBigInt: Option[BigInt] = {
+    if ((constructedFlag & NumberFlags.bigInt) == NumberFlags.bigInt)
+      Some(BigInt(value))
+    else {
+      try {
+        Some(BigInt(value))
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toBigDecimal: Option[BigDecimal] = {
+    try {
+      Some(BigDecimal(value))
+    } catch {
+      case _: NumberFormatException => None
+    }
+  }
+
+  def toFloat: Option[Float] = {
+    if ((constructedFlag & NumberFlags.float) == NumberFlags.float)
+      Some(value.toFloat)
+    else {
+      try {
+        val asFloat = value.toFloat
+        if (BigDecimal(value) == BigDecimal(asFloat.toDouble))
+          Some(asFloat)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+    }
+  }
+
+  def toDouble: Option[Double] = {
+    if ((constructedFlag & NumberFlags.double) == NumberFlags.double)
+      Some(value.toDouble)
+    else {
+      try {
+        val asDouble = value.toDouble
+        if (BigDecimal(value) == BigDecimal(asDouble))
+          Some(asDouble)
+        else
+          None
+      } catch {
+        case _: NumberFormatException => None
+      }
+
+    }
   }
 }
 
@@ -228,12 +326,12 @@ final case class JObject(value: js.Array[JField] = js.Array()) extends JValue {
                               else {
                                 result = 31 * result + elem.field.##
                                 elem.value match {
-                                  case unsafe.JNull        => unsafe.JNull.##
-                                  case unsafe.JString(s)   => s.##
-                                  case unsafe.JBoolean(b)  => b.##
-                                  case unsafe.JNumber(i)   => i.##
-                                  case unsafe.JArray(a)    => a.##
-                                  case unsafe.JObject(obj) => obj.##
+                                  case unsafe.JNull         => unsafe.JNull.##
+                                  case unsafe.JString(s)    => s.##
+                                  case unsafe.JBoolean(b)   => b.##
+                                  case unsafe.JNumber(i, _) => i.##
+                                  case unsafe.JArray(a)     => a.##
+                                  case unsafe.JObject(obj)  => obj.##
                                 }
                               })
       index += 1
@@ -300,12 +398,12 @@ final case class JArray(value: js.Array[JValue] = js.Array()) extends JValue {
       result = 31 * result + (if (elem == null) 0
                               else {
                                 elem match {
-                                  case unsafe.JNull        => unsafe.JNull.##
-                                  case unsafe.JString(s)   => s.##
-                                  case unsafe.JBoolean(b)  => b.##
-                                  case unsafe.JNumber(i)   => i.##
-                                  case unsafe.JArray(a)    => a.##
-                                  case unsafe.JObject(obj) => obj.##
+                                  case unsafe.JNull         => unsafe.JNull.##
+                                  case unsafe.JString(s)    => s.##
+                                  case unsafe.JBoolean(b)   => b.##
+                                  case unsafe.JNumber(i, _) => i.##
+                                  case unsafe.JArray(a)     => a.##
+                                  case unsafe.JObject(obj)  => obj.##
                                 }
                               })
       index += 1
