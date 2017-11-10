@@ -64,7 +64,7 @@ object JNumber extends TestSuite with UTestScalaCheck {
     def readDoubleJNumber =
       forAll { d: Double =>
         scalajson.ast.JNumber(d) match {
-          case scalajson.ast.JNull => JNull == JNull
+          case scalajson.ast.JNull          => JNull == JNull
           case scalajson.ast.JNumber(value) => value == d.toString
         }
       }.checkUTest()
@@ -72,28 +72,28 @@ object JNumber extends TestSuite with UTestScalaCheck {
     def readDoubleNANJNumber = {
       scalajson.ast.JNumber(Double.NaN) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 
     def readDoublePositiveInfinityJNumber = {
       scalajson.ast.JNumber(Double.PositiveInfinity) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 
     def readDoubleNegativeInfinityJNumber = {
       scalajson.ast.JNumber(Double.NegativeInfinity) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 
     def readFloatJNumber =
       forAll { f: Float =>
         scalajson.ast.JNumber(f) match {
-          case scalajson.ast.JNull => JNull == JNull
+          case scalajson.ast.JNull          => JNull == JNull
           case scalajson.ast.JNumber(value) => value == f.toString
         }
       }.checkUTest()
@@ -101,21 +101,21 @@ object JNumber extends TestSuite with UTestScalaCheck {
     def readFloatNANJNumber = {
       scalajson.ast.JNumber(Float.NaN) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 
     def readFloatPositiveInfinityJNumber = {
       scalajson.ast.JNumber(Float.PositiveInfinity) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 
     def readFloatNegativeInfinityJNumber = {
       scalajson.ast.JNumber(Float.NegativeInfinity) match {
         case scalajson.ast.JNull => true
-        case _ => false
+        case _                   => false
       }
     }
 

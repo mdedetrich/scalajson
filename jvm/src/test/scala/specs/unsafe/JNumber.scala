@@ -45,21 +45,21 @@ class JNumber extends Spec {
   def readDoubleNANJNumber = {
     JNumber(Double.NaN).value match {
       case "NaN" => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readDoublePositiveInfinityJNumber = {
     JNumber(Double.PositiveInfinity).value match {
       case "Infinity" => true
-      case _ => false
+      case _          => false
     }
   }
 
   def readDoubleNegativeInfinityJNumber = {
     JNumber(Double.NegativeInfinity).value match {
       case "-Infinity" => true
-      case _ => false
+      case _           => false
     }
   }
 

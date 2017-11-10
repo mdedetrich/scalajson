@@ -53,21 +53,21 @@ object JNumber extends TestSuite with UTestScalaCheck {
   def readDoubleNANJNumber = {
     scalajson.ast.unsafe.JNumber(Double.NaN).value match {
       case "NaN" => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readDoublePositiveInfinityJNumber = {
     scalajson.ast.unsafe.JNumber(Double.PositiveInfinity).value match {
       case "Infinity" => true
-      case _ => false
+      case _          => false
     }
   }
 
   def readDoubleNegativeInfinityJNumber = {
     scalajson.ast.unsafe.JNumber(Double.NegativeInfinity).value match {
       case "-Infinity" => true
-      case _ => false
+      case _           => false
     }
   }
 

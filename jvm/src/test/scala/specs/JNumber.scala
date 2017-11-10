@@ -58,7 +58,7 @@ class JNumber extends Spec {
 
   def readDoubleJNumber = prop { d: Double =>
     JNumber(d) match {
-      case JNull => JNull must beEqualTo(JNull)
+      case JNull          => JNull must beEqualTo(JNull)
       case JNumber(value) => value must beEqualTo(d.toString)
     }
   }
@@ -66,27 +66,27 @@ class JNumber extends Spec {
   def readDoubleNANJNumber = {
     JNumber(Double.NaN) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readDoublePositiveInfinityJNumber = {
     JNumber(Double.PositiveInfinity) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readDoubleNegativeInfinityJNumber = {
     JNumber(Double.NegativeInfinity) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readFloatJNumber = prop { f: Float =>
     JNumber(f) match {
-      case JNull => JNull must beEqualTo(JNull)
+      case JNull          => JNull must beEqualTo(JNull)
       case JNumber(value) => value must beEqualTo(f.toString)
     }
   }
@@ -94,21 +94,21 @@ class JNumber extends Spec {
   def readFloatNANJNumber = {
     JNumber(Float.NaN) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readFloatPositiveInfinityJNumber = {
     JNumber(Float.PositiveInfinity) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 
   def readFloatNegativeInfinityJNumber = {
     JNumber(Float.NegativeInfinity) match {
       case JNull => true
-      case _ => false
+      case _     => false
     }
   }
 

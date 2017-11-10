@@ -2,13 +2,13 @@ language: scala
 
 scala:
   - 2.10.6
-  - 2.11.11
+  - 2.11.12
 jdk:
   - oraclejdk7
 env: RUN_MIMA=false
 matrix:
   include:
-  - scala: 2.12.2
+  - scala: 2.12.4
     jdk: oraclejdk8
     env: RUN_MIMA=true
 

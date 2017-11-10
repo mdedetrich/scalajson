@@ -70,9 +70,9 @@ object JNumber {
     * @return Will return a JNull if value is a Nan or Infinity
     */
   def apply(value: Double): JValue = value match {
-    case n if n.isNaN => JNull
+    case n if n.isNaN      => JNull
     case n if n.isInfinity => JNull
-    case _ => new JNumber(value.toString)(NumberFlags.doubleConstructed)
+    case _                 => new JNumber(value.toString)(NumberFlags.doubleConstructed)
   }
 
   /**
@@ -81,8 +81,8 @@ object JNumber {
     */
   def apply(value: Float): JValue = value match {
     case n if java.lang.Float.isNaN(n) => JNull
-    case n if n.isInfinity => JNull
-    case _ => new JNumber(value.toString)(NumberFlags.floatConstructed)
+    case n if n.isInfinity             => JNull
+    case _                             => new JNumber(value.toString)(NumberFlags.floatConstructed)
   }
 
   def apply(value: String): Option[JNumber] =
@@ -90,8 +90,8 @@ object JNumber {
 
   def fromString(value: String): Option[JNumber] =
     value match {
-      case jNumberRegex(_ *) => Some(new JNumber(value)(0))
-      case _ => None
+      case jNumberRegex(_*) => Some(new JNumber(value)(0))
+      case _                => None
     }
 }
 
@@ -116,9 +116,9 @@ final case class JNumber private[ast] (value: String)(
     new unsafe.JNumber(value, constructedFlag)
 
   override def toJsAny: js.Any = value.toDouble match {
-    case n if n.isNaN => null
+    case n if n.isNaN      => null
     case n if n.isInfinity => null
-    case n => n
+    case n                 => n
   }
 
   override def equals(obj: Any): Boolean =
@@ -133,8 +133,8 @@ final case class JNumber private[ast] (value: String)(
 
   def copy(value: String): JNumber =
     value match {
-      case jNumberRegex(_ *) => new JNumber(value)(0)
-      case _ => throw new NumberFormatException(value)
+      case jNumberRegex(_*) => new JNumber(value)(0)
+      case _                => throw new NumberFormatException(value)
     }
 
   def toInt: Option[Long] = {

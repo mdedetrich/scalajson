@@ -54,7 +54,7 @@ object JBoolean extends TestSuite with UTestScalaCheck {
       }
     } catch {
       case _: MatchError => true
-      case _ => false
+      case _             => false
     }
   }
 
@@ -77,7 +77,7 @@ object JBoolean extends TestSuite with UTestScalaCheck {
       }
     } catch {
       case _: MatchError => true
-      case _ => false
+      case _             => false
     }
   }
 
@@ -98,7 +98,7 @@ object JBoolean extends TestSuite with UTestScalaCheck {
       }
     } catch {
       case _: MatchError => true
-      case _ => false
+      case _             => false
     }
   }
 
@@ -119,7 +119,7 @@ object JBoolean extends TestSuite with UTestScalaCheck {
       }
     } catch {
       case _: MatchError => true
-      case _ => false
+      case _             => false
     }
   }
 

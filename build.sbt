@@ -5,9 +5,9 @@ import PgpKeys.publishSigned
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.crossProject
 
-val currentScalaVersion = "2.11.11"
+val currentScalaVersion = "2.11.12"
 val scala210Version = "2.10.6"
-val scala212Version = "2.12.2"
+val scala212Version = "2.12.4"
 val scalaCheckVersion = "1.13.4"
 val specs2Version = "3.9.1"
 
@@ -15,6 +15,8 @@ scalaVersion in ThisBuild := currentScalaVersion
 crossScalaVersions in ThisBuild := Seq(currentScalaVersion,
                                        scala212Version,
                                        scala210Version)
+
+scalafmtVersion in ThisBuild := "1.3.0"
 
 autoAPIMappings := true
 
@@ -36,7 +38,7 @@ val flagsFor11 = Seq(
 val flagsFor12 = Seq(
   "-Xlint:_",
   "-Ywarn-infer-any",
-  "-opt:l:project"
+  "-opt-inline-from:<sources>"
 )
 
 lazy val root = project

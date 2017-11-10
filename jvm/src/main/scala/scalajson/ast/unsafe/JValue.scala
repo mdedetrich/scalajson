@@ -86,8 +86,8 @@ final case class JNumber(value: String, constructedFlag: Int = 0)
 
   override def toStandard: ast.JValue =
     value match {
-      case jNumberRegex(_ *) => new ast.JNumber(value)(constructedFlag)
-      case _ => throw new NumberFormatException(value)
+      case jNumberRegex(_*) => new ast.JNumber(value)(constructedFlag)
+      case _                => throw new NumberFormatException(value)
     }
 
   override def equals(obj: scala.Any): Boolean = {
