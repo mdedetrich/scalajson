@@ -93,7 +93,7 @@ final case class JNumber(value: String, constructedFlag: Int = 0)
   override def equals(obj: scala.Any): Boolean = {
     obj match {
       case jNumber: JNumber => jNumber.value == this.value
-      case _ => false
+      case _                => false
     }
   }
 

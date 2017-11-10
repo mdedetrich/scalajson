@@ -106,7 +106,7 @@ final case class JNumber(value: String, constructedFlag: Int = 0)
   override def equals(obj: scala.Any): Boolean = {
     obj match {
       case jNumber: JNumber => jNumber.value == this.value
-      case _ => false
+      case _                => false
     }
   }
 
@@ -326,12 +326,12 @@ final case class JObject(value: js.Array[JField] = js.Array()) extends JValue {
                               else {
                                 result = 31 * result + elem.field.##
                                 elem.value match {
-                                  case unsafe.JNull        => unsafe.JNull.##
-                                  case unsafe.JString(s)   => s.##
-                                  case unsafe.JBoolean(b)  => b.##
-                                  case unsafe.JNumber(i, _)   => i.##
-                                  case unsafe.JArray(a)    => a.##
-                                  case unsafe.JObject(obj) => obj.##
+                                  case unsafe.JNull         => unsafe.JNull.##
+                                  case unsafe.JString(s)    => s.##
+                                  case unsafe.JBoolean(b)   => b.##
+                                  case unsafe.JNumber(i, _) => i.##
+                                  case unsafe.JArray(a)     => a.##
+                                  case unsafe.JObject(obj)  => obj.##
                                 }
                               })
       index += 1
@@ -398,12 +398,12 @@ final case class JArray(value: js.Array[JValue] = js.Array()) extends JValue {
       result = 31 * result + (if (elem == null) 0
                               else {
                                 elem match {
-                                  case unsafe.JNull        => unsafe.JNull.##
-                                  case unsafe.JString(s)   => s.##
-                                  case unsafe.JBoolean(b)  => b.##
-                                  case unsafe.JNumber(i, _)   => i.##
-                                  case unsafe.JArray(a)    => a.##
-                                  case unsafe.JObject(obj) => obj.##
+                                  case unsafe.JNull         => unsafe.JNull.##
+                                  case unsafe.JString(s)    => s.##
+                                  case unsafe.JBoolean(b)   => b.##
+                                  case unsafe.JNumber(i, _) => i.##
+                                  case unsafe.JArray(a)     => a.##
+                                  case unsafe.JObject(obj)  => obj.##
                                 }
                               })
       index += 1
