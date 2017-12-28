@@ -11,6 +11,8 @@ import org.scalacheck.Gen._
 import org.scalacheck.Shrink._
 import org.scalacheck.{Arbitrary, Gen, Shrink}
 
+import scala.collection.immutable.VectorMap
+
 object Generators {
 
   /**
@@ -161,7 +163,13 @@ object Generators {
     for {
       fields <- Gen
         .listOfN(maxWidth, genFields(maxDepth - 1, maxWidth))
-        .map(_.toMap)
+        .map { values =>
+          val b = VectorMap.newBuilder[String, scalajson.ast.JValue]
+          for (x <- values)
+            b += x
+
+          b.result()
+        }
     } yield scalajson.ast.JObject(fields)
   }
 

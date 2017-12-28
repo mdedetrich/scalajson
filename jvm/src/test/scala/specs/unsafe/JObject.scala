@@ -1,8 +1,11 @@
 package specs.unsafe
 
 import specs.Spec
+
 import scalajson.ast.unsafe._
 import Generators._
+
+import scala.collection.immutable.VectorMap
 
 class JObject extends Spec {
   def is =
@@ -15,7 +18,16 @@ class JObject extends Spec {
     val values = jObject.value.map { x =>
       (x.field, x.value.toStandard)
     }.toMap
-    jObject.toStandard == scalajson.ast.JObject(values)
+
+    val mapped = {
+      val b = VectorMap.newBuilder[String, scalajson.ast.JValue]
+      for (x <- values)
+        b += x
+
+      b.result()
+    }
+
+    jObject.toStandard == scalajson.ast.JObject(mapped)
   }
 
 }

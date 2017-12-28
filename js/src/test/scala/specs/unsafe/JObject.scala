@@ -8,7 +8,7 @@ import Generators._
 import specs.{UTestScalaCheck, Utils}
 
 import scala.scalajs.js
-import js.JSConverters._
+import scala.collection.immutable.VectorMap
 
 object JObject extends TestSuite with UTestScalaCheck {
 
@@ -22,8 +22,16 @@ object JObject extends TestSuite with UTestScalaCheck {
     forAll { jObject: scalajson.ast.unsafe.JObject =>
       val values = jObject.value.map { x =>
         (x.field, x.value.toStandard)
-      }.toMap
+      }
 
-      jObject.toStandard == scalajson.ast.JObject(values)
+      val mapped = {
+        val b = VectorMap.newBuilder[String, scalajson.ast.JValue]
+        for (x <- values)
+          b += x
+
+        b.result()
+      }
+
+      jObject.toStandard == scalajson.ast.JObject(mapped)
     }.checkUTest()
 }

@@ -1,6 +1,7 @@
 package scalajson.ast
 
 import scala.scalajs.js
+import scala.collection.immutable.VectorMap
 
 /** Represents a valid JSON Value
   *
@@ -179,7 +180,7 @@ final case object JFalse extends JBoolean {
   *
   * @author Matthew de Detrich
   */
-final case class JObject(value: Map[String, JValue] = Map.empty)
+final case class JObject(value: VectorMap[String, JValue] = VectorMap.empty)
     extends JValue {
 
   /**
@@ -188,7 +189,13 @@ final case class JObject(value: Map[String, JValue] = Map.empty)
     * @param value
     */
   def this(value: js.Dictionary[JValue]) = {
-    this(value.toMap)
+    this({
+      val b = scala.collection.immutable.VectorMap.newBuilder[String, JValue]
+      for (x <- value)
+        b += x
+
+      b.result()
+    })
   }
 
   override def toUnsafe: unsafe.JValue = {

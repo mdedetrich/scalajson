@@ -1,6 +1,7 @@
 package scalajson.ast
 package unsafe
 
+import scala.collection.immutable.VectorMap
 import scalajson.ast
 import scala.scalajs.js
 
@@ -179,9 +180,9 @@ final case class JObject(value: js.Array[JField] = js.Array()) extends JValue {
     val length = value.length
 
     if (length == 0) {
-      ast.JObject(Map.newBuilder[String, ast.JValue].result())
+      ast.JObject(VectorMap.newBuilder[String, ast.JValue].result())
     } else {
-      val b = Map.newBuilder[String, ast.JValue]
+      val b = VectorMap.newBuilder[String, ast.JValue]
       var index = 0
       while (index < length) {
         val v = value(index)
