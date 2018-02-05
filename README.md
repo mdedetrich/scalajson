@@ -129,6 +129,9 @@ Further, `toFloat` on `JNumber` (see [Number Conversions](#number-conversions) )
 strict-floats enabled in your application. Please see the [Scala.js semantics page](https://www.scala-js.org/doc/semantics.html)
 for more information.
 
+Since `scalajson.ast.unsafe.JArray` uses `js.Array` underneath this gives us performance improvements for certain
+methods, i.e. the `scalajson.ast.unsafe.JArray.toJsAny` mutates an array in place to provide better performance. 
+
 ## jNumberRegex
 `scalajson.JNumber` uses `jNumberRegex` to validate whether a number is a valid
 JSON number. One can use `jNumberRegex` explicitly if you want to use the validation that

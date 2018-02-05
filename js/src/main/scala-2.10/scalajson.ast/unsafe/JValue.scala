@@ -5,6 +5,7 @@ import scalajson.ast
 import scalajson.ast._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.|
 
 /** Represents a JSON Value which may be invalid. Internally uses mutable
   * collections when its desirable to do so, for performance and other reasons
@@ -282,16 +283,15 @@ final case class JArray(value: js.Array[JValue] = js.Array()) extends JValue {
   }
 
   override def toJsAny: js.Any = {
-    val jsArray = js.Array[js.Any]()
     val length = value.length
-    if (length != 0) {
-      var index = 0
-      while (index < length) {
-        jsArray.push(value(index).toJsAny)
-        index += 1
+    if (length == 0) {
+      js.Array[js.Any]()
+    } else {
+      val jsArray = value.asInstanceOf[js.Array[js.Any | JValue]]
+      jsArray.map { v =>
+        v.asInstanceOf[JValue].toJsAny
       }
     }
-    jsArray
   }
 
   override def equals(obj: scala.Any): Boolean = {
