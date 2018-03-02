@@ -1,6 +1,8 @@
 package scalajson.ast
 package unsafe
 
+import scala.collection.generic.CanBuildFrom
+import scala.language.higherKinds
 import scalajson.ast
 import scalajson.ast._
 import scala.scalajs.js
@@ -15,16 +17,18 @@ import scala.scalajs.js.annotation.JSExport
   */
 sealed abstract class JValue extends Serializable with Product {
 
+  private[unsafe] type CBF[C[A, B] <: Map[A, B]] = CanBuildFrom[Nothing, (String, ast.JValue), C[String, ast.JValue]]
   /**
     * Converts a [[unsafe.JValue]] to a [[ast.JValue]]. Note that
     * when converting [[unsafe.JNumber]], this can throw runtime error if the underlying
     * string representation is not a correct number. Also when converting a [[ast.JObject]]
     * to a [[ast.JObject]], its possible to lose data if you have duplicate keys.
     *
+    * @tparam C An immutable Map abstraction, by default its [[scala.collection.immutable.Map]]
     * @see https://www.ietf.org/rfc/rfc4627.txt
     * @return
     */
-  def toStandard: ast.JValue
+  def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue
 
   /**
     * Converts a [[unsafe.JValue]] to a Javascript object/value that can be used within
@@ -40,7 +44,7 @@ sealed abstract class JValue extends Serializable with Product {
   * @author Matthew de Detrich
   */
 final case object JNull extends JValue {
-  override def toStandard: ast.JValue = ast.JNull
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JNull
 
   override def toJsAny: js.Any = null
 }
@@ -50,7 +54,7 @@ final case object JNull extends JValue {
   * @author Matthew de Detrich
   */
 final case class JString(value: String) extends JValue {
-  override def toStandard: ast.JValue = ast.JString(value)
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JString(value)
 
   override def toJsAny: js.Any = value
 }
@@ -85,7 +89,7 @@ object JNumber {
   */
 // JNumber is internally represented as a string, to improve performance
 final case class JNumber(value: String) extends JValue {
-  override def toStandard: ast.JValue =
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue =
     value match {
       case jNumberRegex(_*) => new ast.JNumber(value)
       case _                => throw new NumberFormatException(value)
@@ -135,7 +139,7 @@ object JBoolean {
 final case object JTrue extends JBoolean {
   override def get = true
 
-  override def toStandard: ast.JValue = ast.JTrue
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JTrue
 }
 
 /** Represents a JSON Boolean false value
@@ -145,7 +149,7 @@ final case object JTrue extends JBoolean {
 final case object JFalse extends JBoolean {
   override def get = false
 
-  override def toStandard: ast.JValue = ast.JFalse
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JFalse
 }
 
 final case class JField(field: String, value: JValue)
@@ -174,15 +178,14 @@ final case class JObject(value: js.Array[JField] = js.Array()) extends JValue {
     })
   }
 
-  override def toStandard: ast.JValue = {
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = {
     // Javascript array.length across all major browsers has near constant cost, so we
     // use this to build the array http://jsperf.com/length-comparisons
     val length = value.length
-
+    val b = cbf()
     if (length == 0) {
-      ast.JObject(Map.newBuilder[String, ast.JValue].result())
+      ast.JObject(b.result())
     } else {
-      val b = Map.newBuilder[String, ast.JValue]
       var index = 0
       while (index < length) {
         val v = value(index)
@@ -264,7 +267,7 @@ object JArray {
   */
 // JArray is internally represented as a mutable js.Array, to improve sequential performance
 final case class JArray(value: js.Array[JValue] = js.Array()) extends JValue {
-  override def toStandard: ast.JValue = {
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = {
     // Javascript array.length across all major browsers has near constant cost, so we
     // use this to build the array http://jsperf.com/length-comparisons
     val length = value.length

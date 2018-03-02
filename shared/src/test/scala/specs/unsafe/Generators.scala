@@ -176,8 +176,7 @@ object Generators {
 
   implicit val shrinkJsObject: Shrink[scalajson.ast.unsafe.JObject] = Shrink {
     obj =>
-      val stream
-        : Stream[scalajson.ast.unsafe.JObject] = shrink(obj.value) map {
+      val stream: Stream[scalajson.ast.unsafe.JObject] = shrink(obj.value) map {
         fields =>
           scalajson.ast.unsafe.JObject(fields)
       }
@@ -186,7 +185,7 @@ object Generators {
 
   implicit val shrinkJsValue: Shrink[scalajson.ast.unsafe.JValue] = Shrink {
     case array: scalajson.ast.unsafe.JArray => shrink(array)
-    case obj: scalajson.ast.unsafe.JObject => shrink(obj)
+    case obj: scalajson.ast.unsafe.JObject  => shrink(obj)
     case scalajson.ast.unsafe.JString(str) =>
       shrink(str) map scalajson.ast.unsafe.JString
     case scalajson.ast.unsafe.JNumber(num) =>

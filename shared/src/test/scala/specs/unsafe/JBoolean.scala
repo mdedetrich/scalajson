@@ -60,7 +60,6 @@ class JBoolean extends Spec {
       }
     }
 
-
     "pattern match with JBoolean as true and fail with scala.MatchError" in {
       assertThrows[MatchError] {
         JBoolean(true) match {

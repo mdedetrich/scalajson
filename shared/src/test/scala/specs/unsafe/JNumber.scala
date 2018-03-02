@@ -85,8 +85,10 @@ class JNumber extends Spec {
             .toOption
             .isEmpty
         } {
-          scala.util.Try(BigDecimal(JNumber(s).value)).toOption.isEmpty should be(
-            true)
+          scala.util
+            .Try(BigDecimal(JNumber(s).value))
+            .toOption
+            .isEmpty should be(true)
         }
       }
     }

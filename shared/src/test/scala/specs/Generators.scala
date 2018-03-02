@@ -44,10 +44,11 @@ object Generators {
       maxWidth: Width = defaultMaxWidth): Arbitrary[scalajson.ast.JArray] =
     Arbitrary(genJsArray)
 
-  implicit def arbJsString(implicit arbString: Arbitrary[String])
-    : Arbitrary[scalajson.ast.JString] = Arbitrary {
-    arbString.arbitrary map scalajson.ast.JString
-  }
+  implicit def arbJsString(
+      implicit arbString: Arbitrary[String]): Arbitrary[scalajson.ast.JString] =
+    Arbitrary {
+      arbString.arbitrary map scalajson.ast.JString
+    }
 
   implicit def arbJsNumber: Arbitrary[scalajson.ast.JNumber] = Arbitrary {
     genSafeBigDecimal map (x =>
@@ -129,9 +130,8 @@ object Generators {
     * @param maxDepth see [[defaultMaxDepth]] (cannot be less than 1)
     * @param maxWidth see [[defaultMaxWidth]] (cannot be less than 1)
     */
-  def genJsArray(
-      implicit maxDepth: Depth = defaultMaxDepth,
-      maxWidth: Width = defaultMaxWidth): Gen[scalajson.ast.JArray] =
+  def genJsArray(implicit maxDepth: Depth = defaultMaxDepth,
+                 maxWidth: Width = defaultMaxWidth): Gen[scalajson.ast.JArray] =
     Gen.containerOfN[Vector, scalajson.ast.JValue](
       maxWidth,
       genJsValue(maxDepth - 1, maxWidth)) map { scalajson.ast.JArray.apply }
@@ -184,8 +184,8 @@ object Generators {
 
   implicit val shrinkJsValue: Shrink[scalajson.ast.JValue] = Shrink {
     case array: scalajson.ast.JArray => shrink(array)
-    case obj: scalajson.ast.JObject => shrink(obj)
-    case scalajson.ast.JString(str) => shrink(str) map scalajson.ast.JString
+    case obj: scalajson.ast.JObject  => shrink(obj)
+    case scalajson.ast.JString(str)  => shrink(str) map scalajson.ast.JString
     case scalajson.ast.JNumber(num) =>
       shrink(num) map (x => scalajson.ast.JNumber.fromString(x).get)
     case scalajson.ast.JNull | scalajson.ast.JBoolean(_) =>

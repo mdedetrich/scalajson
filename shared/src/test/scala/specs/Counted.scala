@@ -13,7 +13,7 @@ trait Counted extends Any {
   def validate(): Unit = {
     count match {
       case neg if neg < 0 => throwOnNegative()
-      case pos =>
+      case pos            =>
     }
   }
 

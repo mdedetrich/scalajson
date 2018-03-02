@@ -133,7 +133,7 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
       "org.scalacheck" %% "scalacheck" % scalaCheckVersion % Test
     ),
-    scalacOptions in Test ++= Seq("-Yrangepos"),
+    // scalacOptions in Test ++= Seq("-Yrangepos"), TODO Remove when https://github.com/scala/bug/issues/10706 is merged
     mimaPreviousArtifacts := Set(
       "org.scala-lang.platform" %% "scalajson" % "1.0.0-M3")
   )
@@ -143,8 +143,8 @@ lazy val scalaJson = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
       "org.scalacheck" %%% "scalacheck" % scalaCheckVersion % Test
     ),
-    testFrameworks += TestFrameworks.ScalaTest,
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    testFrameworks += TestFrameworks.ScalaTest
+    // scalacOptions in Test ++= Seq("-Yrangepos") TODO Remove when https://github.com/scala/bug/issues/10706 is merged
   )
   .nativeSettings(
     crossScalaVersions := Seq(currentScalaVersion)

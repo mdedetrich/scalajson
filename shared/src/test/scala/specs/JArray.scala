@@ -15,7 +15,7 @@ class JArray extends Spec {
         Utils.unsafeJValueEquals(
           jArray.toUnsafe,
           scalajson.ast.unsafe.JArray(values)
-        ) should be (true)
+        ) should be(true)
       }
     }
 

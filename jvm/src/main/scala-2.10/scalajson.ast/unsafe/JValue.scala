@@ -1,6 +1,8 @@
 package scalajson.ast
 package unsafe
 
+import scala.collection.generic.CanBuildFrom
+import scala.language.higherKinds
 import scalajson.ast
 import scalajson.ast._
 
@@ -13,16 +15,18 @@ import scalajson.ast._
   */
 sealed abstract class JValue extends Serializable with Product {
 
+  private[unsafe] type CBF[C[A, B] <: Map[A, B]] = CanBuildFrom[Nothing, (String, ast.JValue), C[String, ast.JValue]]
   /**
     * Converts a [[unsafe.JValue]] to a [[ast.JValue]]. Note that
     * when converting [[unsafe.JNumber]], this can throw runtime error if the underlying
     * string representation is not a correct number. Also when converting a [[unsafe.JObject]]
     * to a [[ast.JObject]], its possible to lose data if you have duplicate keys.
     *
+    * @tparam C An immutable Map abstraction, by default its [[scala.collection.immutable.Map]]
     * @see https://www.ietf.org/rfc/rfc4627.txt
     * @return
     */
-  def toStandard: ast.JValue
+  def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue
 }
 
 /** Represents a JSON null value
@@ -30,7 +34,7 @@ sealed abstract class JValue extends Serializable with Product {
   * @author Matthew de Detrich
   */
 final case object JNull extends JValue {
-  override def toStandard: ast.JValue = ast.JNull
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JNull
 }
 
 /** Represents a JSON string value
@@ -38,7 +42,7 @@ final case object JNull extends JValue {
   * @author Matthew de Detrich
   */
 final case class JString(value: String) extends JValue {
-  override def toStandard: ast.JValue = ast.JString(value)
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JString(value)
 }
 
 object JNumber {
@@ -71,7 +75,7 @@ object JNumber {
   */
 // JNumber is internally represented as a string, to improve performance
 final case class JNumber(value: String) extends JValue {
-  override def toStandard: ast.JValue =
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue =
     value match {
       case jNumberRegex(_ *) => new ast.JNumber(value)
       case _ => throw new NumberFormatException(value)
@@ -113,7 +117,7 @@ object JBoolean {
 final case object JTrue extends JBoolean {
   override def get = true
 
-  override def toStandard: ast.JValue = ast.JTrue
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JTrue
 }
 
 /** Represents a JSON Boolean false value
@@ -123,7 +127,7 @@ final case object JTrue extends JBoolean {
 final case object JFalse extends JBoolean {
   override def get = false
 
-  override def toStandard: ast.JValue = ast.JFalse
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = ast.JFalse
 }
 
 final case class JField(field: String, value: JValue)
@@ -139,13 +143,13 @@ object JObject {
   */
 // JObject is internally represented as a mutable Array, to improve sequential performance
 final case class JObject(value: Array[JField] = Array.empty) extends JValue {
-  override def toStandard: ast.JValue = {
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = {
     val length = value.length
+    val b = cbf()
     if (length == 0) {
-      ast.JObject(Map[String, ast.JValue]())
+      ast.JObject(b.result())
     } else {
       var index = 0
-      val b = Map.newBuilder[String, ast.JValue]
       while (index < length) {
         val v = value(index)
         b += ((v.field, v.value.toStandard))
@@ -189,7 +193,7 @@ object JArray {
   */
 // JArray is internally represented as a mutable Array, to improve sequential performance
 final case class JArray(value: Array[JValue] = Array.empty) extends JValue {
-  override def toStandard: ast.JValue = {
+  override def toStandard[C[A, B] <: Map[A, B]](implicit cbf: CBF[C]): ast.JValue = {
     val length = value.length
     if (length == 0) {
       ast.JArray(Vector[ast.JValue]())

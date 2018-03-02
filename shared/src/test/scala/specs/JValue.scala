@@ -12,7 +12,8 @@ class JValue extends Spec {
             scalajson.ast.JNumber.fromString(jNumber.value).get
           case jString: scalajson.ast.JString =>
             scalajson.ast.JString(jString.value)
-          case jArray: scalajson.ast.JArray => scalajson.ast.JArray(jArray.value)
+          case jArray: scalajson.ast.JArray =>
+            scalajson.ast.JArray(jArray.value)
           case jObject: scalajson.ast.JObject =>
             scalajson.ast.JObject(jObject.value)
           case jBoolean: scalajson.ast.JBoolean =>

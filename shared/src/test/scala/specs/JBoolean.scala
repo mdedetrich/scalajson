@@ -12,7 +12,7 @@ class JBoolean extends Spec {
 
     "pattern match with JTrue" in {
       forAll { b: Boolean =>
-        whenever (b == true) {
+        whenever(b == true) {
           val result = JBoolean(b) match {
             case f @ JTrue => f
           }
@@ -31,7 +31,7 @@ class JBoolean extends Spec {
 
     "pattern match with JFalse" in {
       forAll { b: Boolean =>
-        whenever (b == false) {
+        whenever(b == false) {
           val result = JBoolean(b) match {
             case f @ JFalse => f
           }
@@ -69,7 +69,7 @@ class JBoolean extends Spec {
 
     "pattern match with JBoolean as false" in {
       forAll { b: Boolean =>
-        whenever {b == false} {
+        whenever { b == false } {
           val result = JBoolean(b) match {
             case f @ JBoolean(false) => f
           }
@@ -94,7 +94,7 @@ class JBoolean extends Spec {
     }
 
     "equals" in {
-      forAll {b: Boolean =>
+      forAll { b: Boolean =>
         scalajson.ast.JBoolean(b) should be(scalajson.ast.JBoolean(b))
       }
     }
@@ -104,7 +104,7 @@ class JBoolean extends Spec {
   "The JTrue value" should {
     "read a Boolean as true" in {
       forAll { b: Boolean =>
-        whenever (b == true) {
+        whenever(b == true) {
           JTrue.get should be(b)
         }
       }
@@ -114,7 +114,7 @@ class JBoolean extends Spec {
   "The JFalse value" should {
     "read a Boolean as false" in {
       forAll { b: Boolean =>
-        whenever (b == false) {
+        whenever(b == false) {
           JFalse.get should be(b)
         }
       }

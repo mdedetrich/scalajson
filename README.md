@@ -75,18 +75,42 @@ duplicate keys for a `scalajson.ast.unsafe.JObject`).
 ## Conversion between scalajson.JValue and scalajson.ast.unsafe.JValue
 
 Any `scalajson.ast.JValue` implements a conversion to `scalajson.ast.unsafe.JValue` with a `toUnsafe` method and vice versa with a
-`toStandard` method. These conversion methods have been written to be as fast as possible.
+`toStandard` method. These conversion methods have been written to be as fast as possible. Since there are  many `immutable.Map`
+implementations that can satisfy a `scalaJson.JValue` (with varying properties), the `.toStandard` method allows you to specify what type of
+`immutable.Map` your `scalajson.ast.JValue` will have, i.e.
 
-There are some peculiarities when converting between the two AST's. When converting a `scalajson.ast.unsafe.JNumber` to a 
+```scala
+import scalajson.ast.unsafe._
+import scala.collection.immutable.ListMap
+
+val jsonObject = JObject(
+  Array(
+    JField("a" -> JString("a")),
+    JField("b" -> JString("b")),
+    JField("c" -> JString("c")),
+    JField("d" -> JString("d")),
+    JField("e" -> JString("e"))
+  )
+)
+
+// This is the default, will create an immutable Map. Note that it will not maintain key ordering for sizes > 4
+jsonObject.toStandard[Map]
+// Convert to a ListMap, this will maintain key ordering but lose effectively constant lookup by key
+jsonObject.toStandard[ListMap]
+```
+
+Similarly, converting from a `scalajson.ast.JObject` to a `scalajson.ast.unsafe.JObject` will produce 
+a `scalajson.ast.unsafe.JObject` with an undefined ordering for its internal `Array`/`js.Array` representation
+if the `scalajson.ast.JObject` is implemented using an  `immutable.Map`. This is because an `immutable.Map` has no
+predefined ordering. If you wish to provide ordering, you will either need to write your own custom conversion to handle
+this case.
+
+Duplicate keys will also be removed in an undefined manner.
+
+There are some other peculiarities when converting between the two AST's. When converting a `scalajson.ast.unsafe.JNumber` to a 
 `scalajson.ast.JNumber`, it is possible for this to fail at runtime (since the internal representation of 
 `scalajson.ast.unsafe.JNumber` is a `String` and it doesn't have a runtime check). It is up to the caller on how to handle this error (and when), 
 a runtime check is deliberately avoided on our end for performance reasons.
-
-Converting from a `scalajson.ast.JObject` to a `scalajson.ast.unsafe.JObject` will produce 
-an `scalajson.ast.unsafe.JObject` with an undefined ordering for its internal `Array`/`js.Array` representation.
-This is because a `Map` has no predefined ordering. If you wish to provide ordering, you will either need
-to write your own custom conversion to handle this case. Duplicate keys will also be removed for the same reason
-in an undefined manner.
 
 Do note that according to the JSON spec, whether to order keys for a `JObject` is not specified. Also note that `Map` 
 disregards ordering for equality, however `Array`/`js.Array` equality takes ordering into account.
