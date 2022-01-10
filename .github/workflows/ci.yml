@@ -1,0 +1,75 @@
+name: CI
+on:
+  pull_request:
+  push:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            java: 8
+            distribution: temurin
+            jobtype: 1
+          - os: ubuntu-latest
+            java: 8
+            distribution: temurin
+            jobtype: 2
+          - os: ubuntu-latest
+            java: 8
+            distribution: temurin
+            jobtype: 3
+    runs-on: ${{ matrix.os }}
+    env:
+      JAVA_OPTS: -Xms800M -Xmx2G -Xss6M -XX:ReservedCodeCacheSize=128M -server -Dsbt.io.virtual=false -Dfile.encoding=UTF-8
+      JVM_OPTS: -Xms800M -Xmx2G -Xss6M -XX:ReservedCodeCacheSize=128M -server -Dsbt.io.virtual=false -Dfile.encoding=UTF-8
+      SCALA_210: 2.10.7
+      SCALA_211: 2.11.12
+      SCALA_212: 2.12.10
+      SCALA_213: 2.13.1
+      SCALA_3: 3.1.0
+      JDK11: adopt@1.11.0-9
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: "${{ matrix.distribution }}"
+        java-version: "${{ matrix.java }}"
+    - name: Coursier cache
+      uses: coursier/cache-action@v6
+    - name: Build and test (1)
+      if: ${{ matrix.jobtype == 1 }}
+      shell: bash
+      run: |
+        sbt -v clean scalafmtCheckAll coverage test coverageReport
+        sbt -v ++$SCALA_212! "test"
+        sbt -v ++$SCALA_212! "benchmarkJVM/Test/compile"
+        sbt -v ++$SCALA_212! "benchmarkJS/Test/compile"
+    - name: Build and test (2)
+      if: ${{ matrix.jobtype == 2 }}
+      shell: bash
+      run: |
+        sbt -v ++$SCALA_213! "test"
+    - name: Build and test (3)
+      if: ${{ matrix.jobtype == 3 }}
+      shell: bash
+      run: |
+        sbt -v scalafmtCheckAll coverage test coverageReport
+        sbt -v ++$SCALA_211! "test"
+        sbt -v ++$SCALA_211! "benchmarkJVM/Test/compile"
+        sbt -v ++$SCALA_211! "benchmarkJS/Test/compile"
+        sbt -v ++$SCALA_210! "test"
+        sbt -v ++$SCALA_210! "benchmarkJVM/Test/compile"
+        sbt -v ++$SCALA_210! "benchmarkJS/Test/compile"
+    - name: Cleanup
+      shell: bash
+      run: |
+        rm -rf "$HOME/.ivy2/local" || true
+        find $HOME/Library/Caches/Coursier/v1        -name "ivydata-*.properties" -delete || true
+        find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
+        find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
+        find $HOME/.sbt                              -name "*.lock"               -delete || true
